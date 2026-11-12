@@ -6,16 +6,65 @@ Still is an actual borderless WPF desktop widget with a separate settings window
 and notification-area menu. C# / .NET 10 LTS; no web view, server, account,
 telemetry, network calls, plugins, or administrator privileges.
 
-## Run the Windows release
+## Install on Windows 11
 
-1. Extract `artifacts/Still-win-x64.zip` into a permanent, user-writable folder.
-2. Run **Still.exe**. The portable self-contained build includes .NET.
-3. The clock and Settings appear on first launch. Settings changes preview and
-   save automatically. Close Settings with **Done** or **Esc**; the clock remains.
+**[Download Still for Windows x64](https://github.com/danny19862025/still-clock/releases/latest/download/Still-win-x64.zip)** · [All releases](https://github.com/danny19862025/still-clock/releases)
 
-The release is unsigned. Keep its documentation and runtime licence notices
-with it when redistributing. The app stores no data beside its executable.
-For ARM Windows, publish `win-arm64` using the command below.
+Still is a portable app: no installer, administrator privileges, account, or separate
+.NET installation is needed. The supplied release is for **Intel/AMD x64 Windows 11**.
+For an ARM64 build, see [Build, test, publish](#build-test-publish) below.
+
+The pictures below are **instructional illustrations, not Windows screenshots**.
+Windows labels and appearance may vary slightly.
+
+### 1. Download the Windows ZIP
+
+Open the [latest release](https://github.com/danny19862025/still-clock/releases/latest).
+Under **Assets**, click **Still-win-x64.zip**. If Assets is collapsed, expand it.
+The GitHub **Code → Download ZIP** and **Source code** downloads contain the project
+source; use **Still-win-x64.zip** to run the app.
+
+![Illustration: in the GitHub release Assets section, click Still-win-x64.zip.](docs/images/install-01-download.svg)
+
+### 2. Extract it into a permanent folder
+
+Open **File Explorer → Downloads**, right-click **Still-win-x64.zip**, and choose
+**Extract All…**. Pick a folder you can write to, such as
+`C:\Users\YourName\Apps\Still`, then click **Extract**. Open the extracted folder;
+keep its documentation and runtime licence folders with the executable.
+
+![Illustration: right-click Still-win-x64.zip, select Extract All, and choose a permanent folder.](docs/images/install-02-extract.svg)
+
+### 3. Launch and personalize your clock
+
+Double-click **Still.exe** in the extracted folder. File Explorer may display it as
+**Still**, with type **Application**, if file extensions are hidden. Open the app
+from this folder after extraction. On first launch, the clock and **Settings** appear.
+Choose **Minimal**, **Typography**, or **Glass**, adjust the appearance, and click
+**Done** (or press **Esc**). Changes save automatically and the clock stays open.
+
+![Illustration: double-click Still.exe in the extracted folder to show the desktop clock and open Settings.](docs/images/install-03-launch.svg)
+
+The release is unsigned. If Windows displays a protection warning, verify that the
+file came from this repository's release and that you trust it before proceeding.
+Windows may offer **More info → Run anyway**; on managed PCs, follow your
+organization's policy if launching is blocked.
+
+### 4. Keep it handy
+
+- **Move it:** drag the clock while its position is unlocked.
+- **Change its look:** double-click the clock to reopen Settings.
+- **Start at sign-in:** in **Settings → Desktop**, enable **Launch Still when I sign in**.
+  Choose the permanent app folder before enabling this.
+- **Find a hidden clock:** open the taskbar notification-area overflow (the **up arrow**),
+  right-click Still's clock icon, and choose **Unlock and restore interaction**.
+  The widget has no taskbar button or Alt+Tab entry.
+- **Exit:** right-click its notification-area icon and choose **Exit**.
+
+To update, exit Still, extract the newer release, and replace the files in the same
+app folder. Preferences are stored separately in `%LOCALAPPDATA%\Still`.
+To remove Still, disable **Launch Still when I sign in**, exit the app, and delete
+its extracted folder. Delete `%LOCALAPPDATA%\Still` too if you want to remove preferences.
 
 ### Three starting points
 

@@ -56,5 +56,4 @@ above. The Glass surface is translucent shading, not native acrylic/blur. Normal
 top-level-window Show Desktop behaviour applies. Advanced arbitrary text can
 change width as words change; numeric cells stay fixed-width. Monitor device names
 are Windows display identifiers and can change if the display topology is rebuilt.
-The release is unsigned. No automated commits, pushes, installations or startup
-registration were performed on this Linux host.
+The release is unsigned. No installations or startup registration were performed on this Linux host.

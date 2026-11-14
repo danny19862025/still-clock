@@ -99,7 +99,8 @@ try
         {
             var preset = new Preferences { Locked = true, Topmost = true }; preset.ApplyPreset(name); preset.Normalize();
             Equal(name, preset.Preset); True(preset.Locked && preset.Topmost);
-            Equal(name == "Glass" ? "Card" : "Transparent", preset.Background);
+            Equal(name switch { "Glass" => "Card", "Typography" => "Solid", _ => "Transparent" }, preset.Background);
+            Equal(name == "Typography" ? 1d : .64, preset.BackgroundOpacity);
         }
     });
 }

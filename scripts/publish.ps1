@@ -3,10 +3,12 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 Push-Location $root
 try {
-    dotnet run --project tests/Still.Tests -c Release
+    dotnet build tests/Still.Tests -c Release --disable-build-servers -m:1
+    if ($LASTEXITCODE -ne 0) { throw 'Core test build failed.' }
+    dotnet tests/Still.Tests/bin/Release/net10.0/Still.Tests.dll
     if ($LASTEXITCODE -ne 0) { throw 'Core tests failed.' }
     $out = Join-Path $root "artifacts/Still-$Runtime"
-    dotnet publish src/Still.App -c Release -r $Runtime --self-contained true -o $out -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+    dotnet publish src/Still.App -c Release -r $Runtime --self-contained true -o $out -p:DebugType=None -p:DebugSymbols=false --disable-build-servers -m:1
     if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
     Copy-Item README.md,LICENSE,THIRD-PARTY-NOTICES.md $out
     New-Item -ItemType Directory -Force "$out/docs" | Out-Null

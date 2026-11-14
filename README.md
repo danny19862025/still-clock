@@ -8,68 +8,29 @@ telemetry, network calls, plugins, or administrator privileges.
 
 ## Install on Windows 11
 
-**[Download Still for Windows x64](https://github.com/danny19862025/still-clock/releases/latest/download/Still-win-x64.zip)** · [All releases](https://github.com/danny19862025/still-clock/releases)
+**[Download the Still installer](https://github.com/danny19862025/still-clock/releases/latest/download/Still-Setup-win-x64.exe)** · [Portable ZIP](https://github.com/danny19862025/still-clock/releases/latest/download/Still-win-x64.zip) · [All releases](https://github.com/danny19862025/still-clock/releases)
 
-Still is a portable app: no installer, administrator privileges, account, or separate
-.NET installation is needed. The supplied release is for **Intel/AMD x64 Windows 11**.
-For an ARM64 build, see [Build, test, publish](#build-test-publish) below.
+1. Exit an older Still from its notification-area clock icon > **Exit Still**. Closing Settings leaves the clock running.
+2. Download and run **Still-Setup-win-x64.exe** from the latest release.
+3. Follow Setup. Still installs for your Windows user, adds a Start menu shortcut, and offers an optional desktop shortcut.
+4. Launch Still and choose **Minimal**, **Type**, or **Glass**. Drag the clock to move it; double-click it to open Settings.
 
-The pictures below are **instructional illustrations, not Windows screenshots**.
-Windows labels and appearance may vary slightly.
+The installer includes .NET, requires no administrator privileges, and targets Intel/AMD x64 Windows 11. Preferences remain in `%LOCALAPPDATA%\Still` across upgrades and uninstall. Remove the app using **Windows Settings > Apps > Installed apps > Still > Uninstall**. Uninstall also removes the app's sign-in entry when it points to the installed copy.
 
-### 1. Download the Windows ZIP
+The release is unsigned. Checksums are published in **SHA256SUMS.txt** alongside the downloads.
 
-Open the [latest release](https://github.com/danny19862025/still-clock/releases/latest).
-Under **Assets**, click **Still-win-x64.zip**. If Assets is collapsed, expand it.
-The GitHub **Code → Download ZIP** and **Source code** downloads contain the project
-source; use **Still-win-x64.zip** to run the app.
+For portable use, extract **Still-win-x64.zip** into a permanent folder and run **Still.exe**. Keep every file together. To update a portable copy, exit Still and replace its files. To remove it, disable launch at sign-in, exit Still and delete its folder.
 
-![Illustration: in the GitHub release Assets section, click Still-win-x64.zip.](docs/images/install-01-download.svg)
+### Everyday controls
 
-### 2. Extract it into a permanent folder
-
-Open **File Explorer → Downloads**, right-click **Still-win-x64.zip**, and choose
-**Extract All…**. Pick a folder you can write to, such as
-`C:\Users\YourName\Apps\Still`, then click **Extract**. Open the extracted folder;
-keep its documentation and runtime licence folders with the executable.
-
-![Illustration: right-click Still-win-x64.zip, select Extract All, and choose a permanent folder.](docs/images/install-02-extract.svg)
-
-### 3. Launch and personalize your clock
-
-Double-click **Still.exe** in the extracted folder. File Explorer may display it as
-**Still**, with type **Application**, if file extensions are hidden. Open the app
-from this folder after extraction. On first launch, the clock and **Settings** appear.
-Choose **Minimal**, **Typography**, or **Glass**, adjust the appearance, and click
-**Done** (or press **Esc**). Changes save automatically and the clock stays open.
-
-![Illustration: double-click Still.exe in the extracted folder to show the desktop clock and open Settings.](docs/images/install-03-launch.svg)
-
-The release is unsigned. If Windows displays a protection warning, verify that the
-file came from this repository's release and that you trust it before proceeding.
-Windows may offer **More info → Run anyway**; on managed PCs, follow your
-organization's policy if launching is blocked.
-
-### 4. Keep it handy
-
-- **Move it:** drag the clock while its position is unlocked.
-- **Change its look:** double-click the clock to reopen Settings.
-- **Start at sign-in:** in **Settings → Desktop**, enable **Launch Still when I sign in**.
-  Choose the permanent app folder before enabling this.
-- **Find a hidden clock:** open the taskbar notification-area overflow (the **up arrow**),
-  right-click Still's clock icon, and choose **Unlock and restore interaction**.
-  The widget has no taskbar button or Alt+Tab entry.
-- **Exit:** right-click its notification-area icon and choose **Exit**.
-
-To update, exit Still, extract the newer release, and replace the files in the same
-app folder. Preferences are stored separately in `%LOCALAPPDATA%\Still`.
-To remove Still, disable **Launch Still when I sign in**, exit the app, and delete
-its extracted folder. Delete `%LOCALAPPDATA%\Still` too if you want to remove preferences.
+- **Appearance:** presets, font, size, colour, date and glass surface. **More options** holds detailed appearance controls.
+- **Advanced > Position & startup:** lock, click-through, always-on-top, launch at sign-in and display placement.
+- **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
 
 ### Three starting points
 
-- **Minimal:** light, oversized hours/minutes with a small weekday and date.
-- **Typography:** larger time and a prominent sage weekday, with a quieter date.
+- **Minimal:** light hours/minutes and date on a transparent surface.
+- **Type:** larger time and weekday on a solid dark card.
 - **Glass:** a rounded, subtly shaded translucent card with a fine highlight.
 
 The default is Minimal with a transparent surface, normal stacking, no seconds,
@@ -84,7 +45,7 @@ Text colour is adjustable for contrast against your own wallpaper.
 - Drag the unlocked clock to reposition. Drag its lower-right corner to scale;
   the grip appears on hover. Double-click, press **F2** or **Ctrl+,**, or use the
   tray menu to open Settings. Keyboard shortcuts apply while the clock has focus.
-- In Settings, **Desktop** contains lock, click-through, always-on-top, startup,
+- In Settings, **Advanced > Position & startup** contains lock, click-through, always-on-top, startup,
   and buttons to move to each connected display.
 - Right-click the **clock icon in the notification area** for Settings,
   Show/Hide, Lock/Unlock, **Unlock and restore interaction**, and Exit.
@@ -175,12 +136,19 @@ powershell -ExecutionPolicy Bypass -File scripts/publish.ps1
 Direct reproducible x64 publish command (from this directory):
 
 ```powershell
-dotnet publish src/Still.App -c Release -r win-x64 --self-contained true -o artifacts/Still-win-x64 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false
+dotnet publish src/Still.App -c Release -r win-x64 --self-contained true -o artifacts/Still-win-x64 -p:DebugType=None -p:DebugSymbols=false
 ```
 
-`Still.exe` is a self-contained compressed executable. .NET extracts native
-runtime libraries into the user's temporary directory on first launch, with no
-elevation. The app code is small; most release size is the bundled desktop runtime.
+The release folder includes the .NET desktop runtime. Keep all files together for portable use; the installer packages them automatically.
+
+To build the installer, install Inno Setup 6.3+ or 7 and run:
+
+```powershell
+./scripts/build-installer.ps1
+```
+
+The installer is written to `artifacts/Still-Setup-win-x64.exe`. GitHub Actions tests and packages app changes on main. After bumping the app version, run the Windows release workflow manually to publish a new versioned release.
+
 Do not enable trimming for WPF. For a smaller download on machines with the
 .NET 10 **Desktop Runtime** already installed:
 

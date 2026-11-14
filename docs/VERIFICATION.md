@@ -1,3 +1,12 @@
+## Version 1.1.0 Windows validation
+
+- Windows Release build and self-contained x64 publish succeeded.
+- All 20 core regression tests passed, including preset background and opacity checks.
+- Actual WPF renders of Minimal, Type, Glass and Settings were generated and visually inspected.
+- Inno Setup compiles the per-user x64 installer. Full install/uninstall registration should be exercised on an unrestricted Windows account before relying on managed deployment.
+
+The following notes describe the original 1.0.0 validation baseline.
+
 # Verification record
 
 Build host: Linux x64 (Arch), 2026-11-12. SDK installed locally for this task:

@@ -9,6 +9,7 @@ public sealed class SettingsWindow : Window
     private readonly ClockApplication app;
     private readonly ClockFace preview = new();
     private readonly StackPanel panel = new();
+    private readonly ScrollViewer scroll = new();
     private readonly TextBlock status = new();
     private readonly TextBlock previewCaption = new();
     private readonly TextBlock pageTitle = new();
@@ -18,8 +19,8 @@ public sealed class SettingsWindow : Window
     private Slider? scale;
     private bool syncing;
     private Preferences P => app.Preferences;
-    private static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(174, 184, 179));
-    private static readonly Brush Accent = new SolidColorBrush(Color.FromRgb(182, 205, 189));
+    private static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(160, 177, 189));
+    private static readonly Brush Accent = new SolidColorBrush(Color.FromRgb(41, 225, 239));
 
     public SettingsWindow(ClockApplication application)
     {
@@ -32,100 +33,63 @@ public sealed class SettingsWindow : Window
         MinHeight = Math.Min(540, SystemParameters.WorkArea.Height - 32);
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/still.ico"));
-        var root = new Grid { Background = new SolidColorBrush(Color.FromRgb(20, 28, 32)) };
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.CanResizeWithGrip;
+        FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
+        var root = new Grid { Background = new SolidColorBrush(Color.FromRgb(10, 17, 23)) };
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(58) });
+        root.RowDefinitions.Add(new RowDefinition());
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(78) });
         Content = root;
-
-        var left = new Grid { Margin = new Thickness(32, 28, 32, 24) };
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        left.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        root.Children.Add(left);
-        var brand = new StackPanel();
-        brand.Children.Add(new TextBlock { Text = "◷  STILL", FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = Accent });
-        brand.Children.Add(new TextBlock { Text = "Make time\nyours.", FontSize = 38, FontWeight = FontWeights.Light, Margin = new Thickness(0, 30, 0, 12), LineHeight = 44 });
-        brand.Children.Add(Copy("A little clarity. A quieter desktop.", 14));
-        left.Children.Add(brand);
-
-        var stage = new Grid { Margin = new Thickness(0, 26, 0, 26) };
-        Grid.SetRow(stage, 1); left.Children.Add(stage);
-        var stageBackground = new Border
+        var titlebar = new Border { Background = new SolidColorBrush(Color.FromRgb(16, 25, 32)), BorderBrush = new SolidColorBrush(Color.FromRgb(44, 60, 69)), BorderThickness = new Thickness(0,0,0,1) };
+        root.Children.Add(titlebar);
+        var titleGrid = new Grid(); titlebar.Child = titleGrid;
+        titleGrid.Children.Add(new TextBlock { Text = "◷   STILL", FontSize = 21, FontWeight = FontWeights.SemiBold, Margin = new Thickness(28,0,0,0), VerticalAlignment = VerticalAlignment.Center });
+        titlebar.MouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; else DragMove(); };
+        var chrome = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        titleGrid.Children.Add(chrome);
+        foreach (var (text, action) in new (string, Action)[] { ("−", () => WindowState = WindowState.Minimized), ("□", () => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized), ("×", Close) })
         {
-            CornerRadius = new CornerRadius(20), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromRgb(62, 83, 78)),
-            Background = new LinearGradientBrush(Color.FromRgb(33, 59, 65), Color.FromRgb(54, 73, 61), 35), Padding = new Thickness(20)
-        };
-        stage.Children.Add(stageBackground);
-        var stageGrid = new Grid(); stageBackground.Child = stageGrid;
-        stageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        stageGrid.RowDefinitions.Add(new RowDefinition());
-        stageGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var badge = Copy("LIVE PREVIEW", 10); badge.Foreground = Accent; stageGrid.Children.Add(badge);
-        var viewbox = new Viewbox { Child = preview, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(0, 20, 0, 20) };
-        Grid.SetRow(viewbox, 1); stageGrid.Children.Add(viewbox);
-        previewCaption.TextWrapping = TextWrapping.Wrap; previewCaption.Foreground = Accent; previewCaption.FontSize = 11;
-        Grid.SetRow(previewCaption, 2); stageGrid.Children.Add(previewCaption);
-        var footer = new StackPanel(); Grid.SetRow(footer, 2); left.Children.Add(footer);
-        footer.Children.Add(Copy("Drag the clock to move it.\nDouble-click it to return here.", 12));
-        var restore = new Button { Content = "_Unlock & bring clock into view", Margin = new Thickness(0, 16, 0, 12) };
-        restore.Click += (_, _) => app.Unlock(); footer.Children.Add(restore);
-        footer.Children.Add(Copy("Find Still in the notification area,\neven when the clock is hidden or click-through.", 11));
-
-        var right = new Border { Background = new SolidColorBrush(Color.FromRgb(26, 36, 41)), Padding = new Thickness(30, 28, 30, 18) };
-        Grid.SetColumn(right, 1); root.Children.Add(right);
-        var rightGrid = new Grid(); right.Child = rightGrid;
-        rightGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        rightGrid.RowDefinitions.Add(new RowDefinition());
-        rightGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var header = new StackPanel(); rightGrid.Children.Add(header);
-        var nav = new UniformGridCompat(3);
-        foreach (var name in new[] { "Appearance", "Desktop", "Advanced" })
+            var button = new Button { Content = text, Width = 48, Background = Brushes.Transparent, BorderThickness = new Thickness(0), FontSize = 21, Padding = new Thickness(0) };
+            button.Click += (_, _) => action(); chrome.Children.Add(button);
+        }
+        var body = new Grid { Margin = new Thickness(30,26,30,24) }; Grid.SetRow(body,1); root.Children.Add(body);
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1,GridUnitType.Star) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1,GridUnitType.Star) });
+        var left = new Grid { Margin = new Thickness(0,0,36,0) }; body.Children.Add(left);
+        var glow = new Border { Height = 230, Background = new RadialGradientBrush(Color.FromArgb(45,30,219,238), Colors.Transparent), CornerRadius = new CornerRadius(100) }; left.Children.Add(glow);
+        var viewbox = new Viewbox { Child = preview, Stretch = Stretch.Uniform, Margin = new Thickness(8), VerticalAlignment = VerticalAlignment.Center }; left.Children.Add(viewbox);
+        previewCaption.Foreground = Muted; previewCaption.FontSize = 11; previewCaption.VerticalAlignment = VerticalAlignment.Bottom; previewCaption.HorizontalAlignment = HorizontalAlignment.Center;
+        left.Children.Add(previewCaption);
+        var right = new Grid { Margin = new Thickness(30,0,0,0) }; Grid.SetColumn(right,1); body.Children.Add(right);
+        right.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); right.RowDefinitions.Add(new RowDefinition());
+        var header = new StackPanel(); right.Children.Add(header);
+        pageTitle.Text = "Settings"; pageTitle.FontSize = 30; pageTitle.FontWeight = FontWeights.Light; pageTitle.Margin = new Thickness(0,0,0,18); header.Children.Add(pageTitle);
+        var nav = new UniformGridCompat(2); header.Children.Add(nav);
+        foreach (var name in new[] { "Appearance", "Advanced" })
         {
-            var button = new Button { Content = name, Margin = new Thickness(0, 0, 6, 18), Padding = new Thickness(6, 9, 6, 9), FontSize = 12 };
+            var button = new Button { Content = name, Margin = new Thickness(0,0,6,20), Padding = new Thickness(5,10,5,10), FontSize = 13, BorderThickness = new Thickness(0,0,0,2) };
             button.Click += (_, _) => ShowPage(name); nav.Children.Add(button); navigation[name] = button;
         }
-        header.Children.Add(nav);
-        var compactPreview = new Border
-        {
-            Height = 130, CornerRadius = new CornerRadius(14), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 14),
-            Background = stageBackground.Background, Visibility = Visibility.Collapsed
+        scroll.Content = panel; scroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto; scroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        scroll.Padding = new Thickness(0,0,6,0); Grid.SetRow(scroll,1); right.Children.Add(scroll);
+        var footer = new Border { BorderBrush = new SolidColorBrush(Color.FromRgb(44,60,69)), BorderThickness = new Thickness(0,1,0,0), Padding = new Thickness(30,16,30,16) }; Grid.SetRow(footer,2); root.Children.Add(footer);
+        var actions = new Grid(); footer.Child = actions;
+        var restore = new Button { Content = "Show clock", Width = 150, HorizontalAlignment = HorizontalAlignment.Left }; restore.Click += (_, _) => app.Unlock(); actions.Children.Add(restore);
+        status.FontSize = 11; status.Foreground = Muted; status.VerticalAlignment = VerticalAlignment.Center; status.HorizontalAlignment = HorizontalAlignment.Center; status.MaxWidth = 460; status.TextWrapping = TextWrapping.Wrap; actions.Children.Add(status);
+        var done = new Button { Content = "_Done", Width = 128, HorizontalAlignment = HorizontalAlignment.Right, Background = Accent, Foreground = Brushes.Black, BorderBrush = Accent }; done.Click += (_, _) => Close(); actions.Children.Add(done);
+        SizeChanged += (_, _) => {
+            bool compact = ActualWidth < 850;
+            left.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            body.ColumnDefinitions[0].Width = compact ? new GridLength(0) : new GridLength(1,GridUnitType.Star);
+            right.Margin = compact ? new Thickness(0) : new Thickness(30,0,0,0);
+            status.MaxWidth = compact ? 220 : 460;
         };
-        header.Children.Add(compactPreview);
-        // Preserve a usable settings form and live preview on smaller/scaled displays.
-        bool compact = false;
-        SizeChanged += (_, _) =>
-        {
-            bool next = root.ActualWidth < 850;
-            if (next == compact) return;
-            compact = next;
-            if (compact)
-            {
-                stageGrid.Children.Remove(viewbox); compactPreview.Child = viewbox;
-                viewbox.Margin = new Thickness(0); compactPreview.Visibility = Visibility.Visible;
-                left.Visibility = Visibility.Collapsed; root.ColumnDefinitions[0].Width = new GridLength(0);
-            }
-            else
-            {
-                compactPreview.Child = null; stageGrid.Children.Add(viewbox);
-                viewbox.Margin = new Thickness(0, 20, 0, 20); compactPreview.Visibility = Visibility.Collapsed;
-                left.Visibility = Visibility.Visible; root.ColumnDefinitions[0].Width = new GridLength(2, GridUnitType.Star);
-            }
-        };
-        pageTitle.FontSize = 25; pageTitle.FontWeight = FontWeights.Light; pageTitle.Margin = new Thickness(0, 0, 0, 18); header.Children.Add(pageTitle);
-        var scroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 12, 0) };
-        Grid.SetRow(scroll, 1); rightGrid.Children.Add(scroll);
-        var bottom = new StackPanel { Margin = new Thickness(0, 14, 0, 0) }; Grid.SetRow(bottom, 2); rightGrid.Children.Add(bottom);
-        status.FontSize = 11; status.Foreground = Accent; status.TextWrapping = TextWrapping.Wrap; bottom.Children.Add(status);
-        var actions = new DockPanel { Margin = new Thickness(0, 12, 0, 0) }; bottom.Children.Add(actions);
-        var reset = new Button { Content = "_Reset defaults", Padding = new Thickness(12, 8, 12, 8), HorizontalAlignment = HorizontalAlignment.Left };
-        reset.Click += (_, _) => { app.Reset(); ShowPage(page); }; actions.Children.Add(reset);
-        var done = new Button { Content = "_Done", MinWidth = 92, HorizontalAlignment = HorizontalAlignment.Right, Background = new SolidColorBrush(Color.FromRgb(63, 88, 74)) };
-        done.Click += (_, _) => Close(); actions.Children.Add(done);
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) { Close(); e.Handled = true; }
-            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is >= Key.D1 and <= Key.D3)
-            { ShowPage(new[] { "Appearance", "Desktop", "Advanced" }[(int)e.Key - (int)Key.D1]); e.Handled = true; }
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is >= Key.D1 and <= Key.D2)
+            { ShowPage(new[] { "Appearance", "Advanced" }[(int)e.Key - (int)Key.D1]); e.Handled = true; }
         };
         app.Updated += OnUpdated;
         Closed += (_, _) => app.Updated -= OnUpdated;
@@ -136,10 +100,10 @@ public sealed class SettingsWindow : Window
     public void RefreshPreview(DateTime time)
     {
         preview.Update(P, time);
-        previewCaption.Text = $"{P.Preset}  /  {P.Scale:0.00}×  /  {(P.Background == "Card" ? "Translucent card" : "Transparent on your wallpaper")}";
+        previewCaption.Text = $"{P.Preset}  /  {P.Scale:0.00}×  /  {(P.Background == "Card" ? "Translucent card" : P.Background == "Solid" ? "Solid dark card" : "Transparent on your wallpaper")}";
         if (scale != null && Math.Abs(scale.Value - P.Scale) > .001) { syncing = true; scale.Value = P.Scale; syncing = false; }
     }
-    public void UpdateStatus() => status.Text = app.StartupNotice ?? app.Store.Notice ?? "Changes save automatically · Works entirely offline";
+    public void UpdateStatus() => status.Text = app.StartupNotice ?? app.Store.Notice ?? "●  Saved automatically";
     public void SyncBehavior()
     {
         syncing = true;
@@ -152,8 +116,13 @@ public sealed class SettingsWindow : Window
     private void ShowPage(string name)
     {
         page = name; panel.Children.Clear(); locked = clickThrough = topmost = null; scale = null;
-        pageTitle.Text = name == "Appearance" ? "Your clock, your way" : name == "Desktop" ? "At home on your desktop" : "A few words of your own";
-        foreach (var (key, button) in navigation) button.Background = new SolidColorBrush(key == name ? Color.FromRgb(63, 85, 76) : Color.FromRgb(35, 49, 54));
+        scroll.ScrollToTop();
+        foreach (var (key, button) in navigation)
+        {
+            button.Background = Brushes.Transparent;
+            button.Foreground = key == name ? Brushes.White : Muted;
+            button.BorderBrush = key == name ? Accent : new SolidColorBrush(Color.FromRgb(44,60,69));
+        }
         if (name == "Appearance") Appearance(); else if (name == "Desktop") Desktop(); else Advanced();
         UpdateStatus();
     }
@@ -202,41 +171,53 @@ public sealed class SettingsWindow : Window
     }
     private void Appearance()
     {
-        Section("START WITH A PRESET", "Three considered starting points. Make any of them your own.");
+        Section("Preset");
         var presets = new UniformGridCompat(3);
         foreach (var name in new[] { "Minimal", "Typography", "Glass" })
         {
-            var content = new StackPanel();
-            content.Children.Add(new TextBlock { Text = "09:41", FontSize = name == "Typography" ? 27 : 24, FontWeight = FontWeights.Light, HorizontalAlignment = HorizontalAlignment.Center });
-            content.Children.Add(new TextBlock { Text = name == "Typography" ? "Thursday" : "THU · 12 NOV", FontSize = name == "Typography" ? 12 : 8, Foreground = Accent, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 3, 0, 13) });
-            content.Children.Add(new TextBlock { Text = name, FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center });
-            var button = new Button { Content = content, Padding = new Thickness(8, 14, 8, 10), Margin = new Thickness(0, 0, 7, 0), BorderBrush = P.Preset == name ? Accent : new SolidColorBrush(Color.FromRgb(65, 81, 77)), Background = new SolidColorBrush(name == "Glass" ? Color.FromRgb(49, 67, 70) : Color.FromRgb(31, 43, 48)) };
+            var button = new Button { Content = name == "Typography" ? "Type" : name, Margin = new Thickness(0,0,8,16), Padding = new Thickness(8,10,8,10), BorderBrush = P.Preset == name ? Accent : new SolidColorBrush(Color.FromRgb(56,75,86)), Background = P.Preset == name ? new SolidColorBrush(Color.FromRgb(19,55,65)) : new SolidColorBrush(Color.FromRgb(17,28,36)) };
             AutomationProperties.SetName(button, name + " preset");
-            button.Click += (_, _) => { P.ApplyPreset(name); app.Apply(); ShowPage("Appearance"); app.Clock.RestorePosition(); };
-            presets.Children.Add(button);
+            button.Click += (_, _) => { P.ApplyPreset(name); app.Apply(); ShowPage("Appearance"); app.Clock.RestorePosition(); }; presets.Children.Add(button);
         }
         panel.Children.Add(presets);
-        Section("TYPE & COLOUR");
         var fonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();
-        if (!fonts.Contains(P.Font)) fonts.Insert(0, P.Font);
+        if (!fonts.Contains(P.Font)) fonts.Insert(0,P.Font);
         Choice("_Font", fonts, P.Font, v => P.Font = v);
-        Range("Font _size", 32, 160, P.FontSize, 1, v => P.FontSize = v);
-        ColorPicker("_Text colour", P.TextColor, v => P.TextColor = v);
-        Check("Use _accent colour for secondary text", P.UseAccent, v => P.UseAccent = v);
-        ColorPicker("Accent _colour", P.AccentColor, v => P.AccentColor = v);
+        Range("_Size",32,160,P.FontSize,1,v => P.FontSize=v);
+        Section("Colour");
+        var colours = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,0,0,10) };
+        foreach (string hex in new[] { "#F5F3ED", "#29E1EF", "#B9A0F5", "#FF8080" })
+        {
+            var swatch = new Button { Width = 34, Height = 34, Margin = new Thickness(0,0,16,0), Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)), BorderBrush = P.TextColor.Equals(hex,StringComparison.OrdinalIgnoreCase) ? Accent : Brushes.Transparent, BorderThickness = new Thickness(3), ToolTip = hex };
+            swatch.Template = (ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='Button'><Border CornerRadius='17' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}'/></ControlTemplate>");
+            AutomationProperties.SetName(swatch,"Text colour " + hex);
+            swatch.Click += (_, _) => { P.TextColor = hex; app.Apply(); ShowPage("Appearance"); }; colours.Children.Add(swatch);
+        }
+        panel.Children.Add(colours);
+        Check("Show _date",P.Date,v => P.Date=v);
+        Check("_Glass effect",P.Background == "Card",v => P.Background = v ? "Card" : "Transparent");
+        int start = panel.Children.Count;
         Section("TIME & DATE", P.Advanced ? "Your advanced template currently controls the text. Turn it off in Advanced to use these visibility options." : null);
         Choice("Time _format", new[] { "24-hour", "12-hour" }, P.Hour24 ? "24-hour" : "12-hour", v => P.Hour24 = v == "24-hour");
         Check("Show _seconds", P.Seconds, v => P.Seconds = v);
         Check("Show A_M/PM in 12-hour time", P.AmPm, v => P.AmPm = v);
         Check("Show _weekday", P.Weekday, v => P.Weekday = v);
-        Check("Show _date", P.Date, v => P.Date = v);
+
+        ColorPicker("Custom text colour", P.TextColor, v => P.TextColor = v);
+        Check("Use accent colour for secondary text",P.UseAccent,v => P.UseAccent=v);
+        ColorPicker("Accent colour",P.AccentColor,v => P.AccentColor=v);
         Section("SURFACE & LAYOUT");
-        Choice("_Background style", new[] { "Transparent", "Card" }, P.Background, v => P.Background = v);
+        Choice("_Background style", new[] { "Transparent", "Solid", "Card" }, P.Background, v => P.Background = v);
         Range("Card _opacity", .1, 1, P.BackgroundOpacity, .01, v => P.BackgroundOpacity = v, "0%");
         panel.Children.Add(Copy("Card opacity affects the surface only. Text stays crisp. Glass is a translucent tint, without wallpaper blur."));
         Choice("_Alignment", new[] { "Left", "Center", "Right" }, P.Alignment, v => P.Alignment = v);
         scale = Range("Overall sca_le", .5, 2, P.Scale, .05, v => P.Scale = v, "0.00'×'");
         panel.Children.Add(Copy("You can also drag the clock’s lower-right corner while unlocked."));
+        var more = new StackPanel();
+        while (panel.Children.Count > start) { var child = panel.Children[start]; panel.Children.RemoveAt(start); more.Children.Add(child); }
+        panel.Children.Add(new Expander { Header = "More options", Content = more });
+        var reset = new Button { Content = "Reset defaults", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,16,0,0) };
+        reset.Click += (_, _) => { app.Reset(); ShowPage(page); }; more.Children.Add(reset);
     }
 
     private void Desktop()
@@ -260,11 +241,16 @@ public sealed class SettingsWindow : Window
             panel.Children.Add(button);
         }
         panel.Children.Add(Copy("Position is remembered per saved display. If that display disconnects, Still moves to the primary display and stays within its working area."));
-        Section("ABOUT STILL", "Still 1.0 · A quiet clock for Windows 11\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
+        Section("ABOUT STILL", "Still 1.1 · A quiet clock for Windows 11\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
     }
 
     private void Advanced()
     {
+        int behaviorStart = panel.Children.Count;
+        Desktop();
+        var behavior = new StackPanel();
+        while (panel.Children.Count > behaviorStart) { var child = panel.Children[behaviorStart]; panel.Children.RemoveAt(behaviorStart); behavior.Children.Add(child); }
+        panel.Children.Add(new Expander { Header = "Position & startup", Content = behavior });
         Section("OPTIONAL CUSTOM TEXT", "Basic customization never needs a template. This editor gives you up to three lines of plain text with a small set of placeholders.");
         Check("Use custom _template", P.Advanced, v => P.Advanced = v);
         var editor = new TextBox { Text = P.Template, AcceptsReturn = true, Height = 126, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, FontFamily = new FontFamily("Cascadia Mono, Consolas"), MaxLength = 240 };
@@ -283,7 +269,14 @@ public sealed class SettingsWindow : Window
         foreach (string token in TemplateFormatter.Tokens)
         {
             var button = new Button { Content = "{" + token + "}", FontSize = 11, Padding = new Thickness(9, 6, 9, 6), Margin = new Thickness(0, 0, 6, 6) };
-            button.Click += (_, _) => { editor.SelectedText = "{" + token + "}"; editor.CaretIndex = editor.SelectionStart + editor.SelectionLength; editor.Focus(); };
+            button.Click += (_, _) =>
+            {
+                string insert = "{" + token + "}";
+                if (editor.Text.Length - editor.SelectionLength + insert.Length > editor.MaxLength)
+                { validation.Text = "The template is limited to 240 characters."; return; }
+                int start = editor.SelectionStart;
+                editor.SelectedText = insert; editor.Select(start + insert.Length, 0); editor.Focus();
+            };
             tokens.Children.Add(button);
         }
         panel.Children.Add(tokens);

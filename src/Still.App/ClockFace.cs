@@ -26,7 +26,7 @@ public sealed class ClockFace : FrameworkElement
         ink = Brush(p.TextColor);
         var accent = p.UseAccent ? Brush(p.AccentColor) : ink;
         cell = "0123456789".Max(c => Measure(c.ToString(), mainSize));
-        padding = (p.Background == "Card" ? 30 : 12) * p.Scale;
+        padding = (p.Background != "Transparent" ? 30 : 12) * p.Scale;
         lines.Clear(); suffix = "";
         double y = padding;
         var culture = CultureInfo.CurrentCulture;
@@ -60,8 +60,8 @@ public sealed class ClockFace : FrameworkElement
                 y += size * 1.4;
             }
             var dateParts = new List<string>();
-            if (p.Weekday && p.Preset != "Typography") dateParts.Add(now.ToString("dddd", culture));
-            if (p.Date) dateParts.Add(now.ToString("d MMMM yyyy", culture));
+            if (p.Weekday && p.Preset != "Typography") dateParts.Add(now.ToString(p.Preset == "Glass" ? "ddd" : "dddd", culture).ToUpper(culture));
+            if (p.Date) dateParts.Add(now.ToString(p.Preset == "Glass" ? "d MMM" : "d MMMM yyyy", culture).ToUpper(culture));
             if (dateParts.Count > 0)
             {
                 double size = mainSize * .205;
@@ -69,7 +69,7 @@ public sealed class ClockFace : FrameworkElement
                 string longestDay = culture.DateTimeFormat.DayNames.MaxBy(d => StableWidth(d, size)) ?? "";
                 string longestMonth = culture.DateTimeFormat.MonthNames.MaxBy(d => StableWidth(d, size)) ?? "";
                 string widest = (p.Weekday && p.Preset != "Typography" ? longestDay + "  ·  " : "") + (p.Date ? "88 " + longestMonth + " 8888" : "");
-                bodyWidth = Math.Max(bodyWidth, StableWidth(widest, size));
+                bodyWidth = Math.Max(bodyWidth, StableWidth(p.Preset == "Glass" ? text : widest, size));
                 lines.Add((text, size, p.Preset == "Typography" ? ink : accent, y));
                 y += size * 1.6;
             }
@@ -102,10 +102,12 @@ public sealed class ClockFace : FrameworkElement
         var bounds = new Rect(0, 0, Width, Height);
         // Near-transparent hit area makes the transparent widget draggable throughout.
         dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(1, 0, 0, 0)), null, bounds);
-        if (p.Background == "Card")
+        if (p.Background != "Transparent")
         {
-            var top = Color.FromArgb((byte)(255 * p.BackgroundOpacity), 39, 53, 58);
-            var bottom = Color.FromArgb((byte)(255 * p.BackgroundOpacity), 17, 27, 33);
+            bool solid = p.Background == "Solid";
+            byte alpha = solid ? (byte)255 : (byte)(255 * p.BackgroundOpacity);
+            var top = solid ? Color.FromRgb(17, 28, 36) : Color.FromArgb(alpha, 39, 53, 58);
+            var bottom = solid ? Color.FromRgb(17, 28, 36) : Color.FromArgb(alpha, 17, 27, 33);
             dc.DrawRoundedRectangle(new LinearGradientBrush(top, bottom, 90), new Pen(new SolidColorBrush(Color.FromArgb(44, 230, 245, 235)), 1), new Rect(.5, .5, Width - 1, Height - 1), 22 * p.Scale, 22 * p.Scale);
             dc.DrawLine(new Pen(new SolidColorBrush(Color.FromArgb(32, 240, 255, 246)), 1), new Point(24 * p.Scale, 1.5), new Point(Width - 24 * p.Scale, 1.5));
         }

@@ -9,7 +9,7 @@ namespace Still.App;
 public partial class ClockApplication : Application
 {
     public Preferences Preferences { get; private set; } = new();
-    public SettingsStore Store { get; } = new(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Still"));
+    public SettingsStore Store { get; } = new(Environment.GetCommandLineArgs().Contains("--verify") ? Path.Combine(AppContext.BaseDirectory, "screenshots", "profile") : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Still"));
     public ClockWindow Clock { get; private set; } = null!;
     private SettingsWindow? settings;
     private Forms.NotifyIcon? tray;
@@ -25,10 +25,11 @@ public partial class ClockApplication : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        instance = new Mutex(true, "Local\\Still.Clock.SingleInstance", out bool first);
+        instance = new Mutex(true, e.Args.Contains("--verify") ? "Local\\Still.Clock.Verify" : "Local\\Still.Clock.SingleInstance", out bool first);
         if (!first) { System.Windows.MessageBox.Show("Still is already running. Use its clock icon in the notification area to open Settings or unlock it.", "Still"); Shutdown(); return; }
         started = true;
         Preferences = Store.Load();
+        if (e.Args.Contains("--verify")) Preferences.ApplyPreset("Glass");
         if (!Fonts.SystemFontFamilies.Any(f => f.Source == Preferences.Font)) Preferences.Font = "Segoe UI";
         // Read our per-user Run entry rather than trusting a stale JSON preference.
         Preferences.LaunchAtLogin = LoginEnabled();
@@ -42,8 +43,8 @@ public partial class ClockApplication : Application
         SystemEvents.TimeChanged += SystemTimeChanged;
         SystemEvents.PowerModeChanged += PowerChanged;
         SystemEvents.DisplaySettingsChanged += DisplaysChanged;
-        if (e.Args.Contains("--capture")) Dispatcher.BeginInvoke(() => CaptureScreenshots(), DispatcherPriority.ApplicationIdle);
-        else if (!File.Exists(Store.FilePath) || Store.Notice != null) OpenSettings();
+        if (e.Args.Contains("--capture") || e.Args.Contains("--verify")) Dispatcher.BeginInvoke(() => CaptureScreenshots(), DispatcherPriority.ApplicationIdle);
+        else if (e.Args.Contains("--settings") || !File.Exists(Store.FilePath) || Store.Notice != null) OpenSettings();
     }
 
     public void RefreshTime()
@@ -170,6 +171,7 @@ public partial class ClockApplication : Application
         }
         OpenSettings(); settings!.UpdateLayout();
         SaveVisual(settings.Content as FrameworkElement ?? settings, Path.Combine(dir, "settings.png"));
+        if (Environment.GetCommandLineArgs().Contains("--verify")) { ExitApp(); return; }
         System.Windows.MessageBox.Show("Screenshots saved to " + dir, "Still");
     }
     private static void SaveVisual(FrameworkElement element, string path)

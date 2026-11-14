@@ -42,8 +42,8 @@ public sealed class ClockWindow : Window
         MouseLeave += (_, _) => { if (!scaling) resizeGrip.Opacity = 0; };
         MouseLeftButtonDown += (_, e) =>
         {
-            if (app.Preferences.Locked) return;
             if (e.ClickCount == 2) { app.OpenSettings(); return; }
+            if (app.Preferences.Locked) return;
             try { DragMove(); CapturePosition(); RestorePosition(); } catch (InvalidOperationException) { }
         };
         var context = new ContextMenu();

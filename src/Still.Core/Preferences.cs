@@ -33,9 +33,10 @@ public sealed class Preferences
         Preset = preset;
         Font = "Segoe UI Variable Display";
         FontSize = preset == "Typography" ? 96 : 80;
-        TextColor = "#F5F3ED"; AccentColor = "#B6CDBD"; UseAccent = true;
-        Background = preset == "Glass" ? "Card" : "Transparent";
-        BackgroundOpacity = .64; Alignment = "Left"; Scale = 1;
+        TextColor = "#F5F3ED"; AccentColor = "#A0B1BD"; UseAccent = true;
+        Background = preset switch { "Glass" => "Card", "Typography" => "Solid", _ => "Transparent" };
+        BackgroundOpacity = preset == "Typography" ? 1 : .64; Alignment = "Center"; Scale = 1;
+        if (preset == "Glass") TextColor = "#FF8080";
         Weekday = Date = true; Seconds = false; Advanced = false;
     }
 
@@ -48,8 +49,8 @@ public sealed class Preferences
         Scale = Limit(Scale, .5, 2, 1);
         BackgroundOpacity = Limit(BackgroundOpacity, .1, 1, .64);
         if (!IsColor(TextColor)) TextColor = "#F5F3ED";
-        if (!IsColor(AccentColor)) AccentColor = "#B6CDBD";
-        if (Background is not ("Transparent" or "Card")) Background = "Transparent";
+        if (!IsColor(AccentColor)) AccentColor = "#A0B1BD";
+        if (Background is not ("Transparent" or "Card" or "Solid")) Background = "Transparent";
         if (Alignment is not ("Left" or "Center" or "Right")) Alignment = "Left";
         if (TemplateFormatter.Validate(Template) != null) Template = "{time}\n{weekday} · {date}";
         if (Position is { } p && (!double.IsFinite(p.OffsetX) || !double.IsFinite(p.OffsetY))) Position = null;

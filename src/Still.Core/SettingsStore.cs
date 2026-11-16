@@ -11,7 +11,7 @@ public sealed class SettingsStore(string directory)
     {
         try
         {
-            if (!File.Exists(FilePath)) return new();
+            if (!File.Exists(FilePath)) return Preferences.CreateDefault();
             if (new FileInfo(FilePath).Length > 64 * 1024) throw new JsonException("Settings too large.");
             var p = JsonSerializer.Deserialize<Preferences>(File.ReadAllText(FilePath), Options)
                 ?? throw new JsonException("Empty settings.");
@@ -22,7 +22,7 @@ public sealed class SettingsStore(string directory)
         {
             Notice = "Your saved preferences could not be read. Defaults are active.";
             try { File.Copy(FilePath, FilePath + ".damaged", true); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-            return new();
+            return Preferences.CreateDefault();
         }
     }
 

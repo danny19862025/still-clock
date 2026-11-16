@@ -56,9 +56,32 @@ public static class TemplateFormatter
         _ => ""
     };
 
-    public static bool NeedsSeconds(Preferences p) => p.Advanced
-        ? p.Template.Contains("{second}") || (p.Template.Contains("{time}") && p.Seconds)
-        : p.Seconds;
+    public static bool NeedsSeconds(Preferences p) =>
+        p.SecondsIndicator != "None" || p.BlinkSeparator || (p.Advanced
+            ? p.Template.Contains("{second}") || (p.Template.Contains("{time}") && p.Seconds)
+            : p.Seconds);
+
+    /// <summary>Weekday and date parts of the preset date line; either may be empty.</summary>
+    public static (string Weekday, string Date) DateParts(DateTime time, Preferences p, CultureInfo? culture = null)
+    {
+        culture ??= CultureInfo.CurrentCulture;
+        string weekday = p.Weekday && p.WeekdayStyle != "Line" ? time.ToString(p.WeekdayStyle == "Short" ? "ddd" : "dddd", culture) : "";
+        string date = !p.Date ? "" : p.DateStyle switch
+        {
+            "Short" => time.ToString("d MMM", culture),
+            "ISO" => time.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            "Numeric" => time.ToString(culture.DateTimeFormat.ShortDatePattern, culture),
+            _ => time.ToString("d MMMM yyyy", culture),
+        };
+        return p.Uppercase ? (weekday.ToUpper(culture), date.ToUpper(culture)) : (weekday, date);
+    }
+
+    /// <summary>A compact UTC offset tag such as "UTC+11:00".</summary>
+    public static string ZoneTag(DateTime time)
+    {
+        var offset = TimeZoneInfo.Local.GetUtcOffset(time);
+        return "UTC" + (offset < TimeSpan.Zero ? "−" : "+") + offset.Duration().ToString(@"hh\:mm");
+    }
 
     public static TimeSpan NextUpdate(DateTime now, Preferences p)
     {

@@ -31,7 +31,7 @@ public sealed class ClockWindow : Window
             Width = 22, Height = 22, HorizontalAlignment = HorizontalAlignment.Right,
             VerticalAlignment = VerticalAlignment.Bottom, Cursor = Cursors.SizeNWSE,
             Background = Brushes.Transparent, Opacity = 0,
-            Child = new TextBlock { Text = "◢", FontSize = 15, Foreground = new SolidColorBrush(Color.FromRgb(182, 205, 189)), HorizontalAlignment = HorizontalAlignment.Center }
+            Child = new TextBlock { Text = "◢", FontSize = 15, Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255)), HorizontalAlignment = HorizontalAlignment.Center }
         };
         root.Children.Add(resizeGrip); Content = root;
         resizeGrip.MouseLeftButtonDown += BeginScale;

@@ -1,10 +1,20 @@
 # Still
 
-A quiet clock for Windows 11. Large, steady time. A little room to breathe.
+A futuristic, deeply customizable desktop clock for Windows 11.
 
 Still is an actual borderless WPF desktop widget with a separate settings window
 and notification-area menu. C# / .NET 10 LTS; no web view, server, account,
 telemetry, network calls, plugins, or administrator privileges.
+
+| Neon | HUD |
+| --- | --- |
+| ![Neon preset](docs/images/preset-neon.png) | ![HUD preset](docs/images/preset-hud.png) |
+| **Holo** | **Terminal** |
+| ![Holo preset](docs/images/preset-holo.png) | ![Terminal preset](docs/images/preset-terminal.png) |
+
+![Still settings window](docs/images/settings.png)
+
+*Actual WPF renders exported with `Still.exe --capture`. The backdrop behind each clock is illustrative.*
 
 ## Install on Windows 11
 
@@ -13,7 +23,7 @@ telemetry, network calls, plugins, or administrator privileges.
 1. Exit an older Still from its notification-area clock icon > **Exit Still**. Closing Settings leaves the clock running.
 2. Download and run **Still-Setup-win-x64.exe** from the latest release.
 3. Follow Setup. Still installs for your Windows user, adds a Start menu shortcut, and offers an optional desktop shortcut.
-4. Launch Still and choose **Minimal**, **Type**, or **Glass**. Drag the clock to move it; double-click it to open Settings.
+4. Launch Still and pick a preset such as **Neon**, **HUD**, **Holo** or **Terminal**. Drag the clock to move it; double-click it to open Settings.
 
 The installer includes .NET, requires no administrator privileges, and targets Intel/AMD x64 Windows 11. Preferences remain in `%LOCALAPPDATA%\Still` across upgrades and uninstall. Remove the app using **Windows Settings > Apps > Installed apps > Still > Uninstall**. Uninstall also removes the app's sign-in entry when it points to the installed copy.
 
@@ -23,22 +33,37 @@ For portable use, extract **Still-win-x64.zip** into a permanent folder and run 
 
 ### Everyday controls
 
-- **Appearance:** presets, font, size, colour, date and glass surface. **More options** holds detailed appearance controls.
-- **Advanced > Position & startup:** lock, click-through, always-on-top, launch at sign-in and display placement.
+Settings has four pages (**Ctrl+1–4**):
+
+- **01 Theme:** a live gallery of all seven presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
+- **02 Style:** font, weight, size, letter spacing, text and accent colours, time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
+- **04 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
 - **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
 
-### Three starting points
+### Seven starting points
 
+- **Neon** (default): thin glowing digits, a sweeping seconds bar, a blinking colon and an ISO date.
+- **HUD:** a scanlined instrument panel with corner brackets, a `SYS.CHRONO` caption, a UTC offset tag and segmented seconds.
+- **Holo:** magenta-to-cyan gradient digits in an outlined glass card with a dotted seconds track.
+- **Terminal:** glowing green monospace on a solid CRT panel with scanlines and a `> now` prompt.
 - **Minimal:** light hours/minutes and date on a transparent surface.
 - **Type:** larger time and weekday on a solid dark card.
 - **Glass:** a rounded, subtly shaded translucent card with a fine highlight.
 
-The default is Minimal with a transparent surface, normal stacking, no seconds,
-unlocked position, and login launch disabled. Choose a preset, installed font,
-size, text/accent colours using colour pickers, card opacity, time format,
-visibility, alignment, and overall scale. Basic customization never needs markup.
-The settings window has a consistent dark palette; preview wallpaper is illustrative.
-Text colour is adjustable for contrast against your own wallpaper.
+A preset is only a starting point; every setting can be changed afterwards.
+Palettes (Cyber, Synth, Matrix, Solar, Plasma, Ice, Ember, Classic) set text and
+accent colours together. Glow, indicators, frames and the gradient follow the
+accent colour. Scanlines appear on Card and Solid surfaces. There is no wallpaper blur.
+
+Fresh installs start on Neon with normal stacking, an unlocked position and login
+launch off. Settings files from Still 1.x keep their look: every new effect is off
+until you turn it on. Basic customization never needs markup.
+
+**Theme sharing:** *Copy theme* puts a single `still-theme:` line on the clipboard.
+*Paste theme* applies one. Themes carry appearance only. Position, lock,
+click-through, always-on-top and startup always stay on your PC. Invalid or
+oversized themes are rejected, and values are clamped the same way as saved settings.
 
 ## Desktop controls
 
@@ -71,7 +96,7 @@ Text colour is adjustable for contrast against your own wallpaper.
   deleting the portable app. Windows startup policy can override this preference.
 
 Settings supports Tab/Shift+Tab, Space, arrow keys, labelled controls and access
-keys. **Ctrl+1/2/3** switches Appearance/Desktop/Advanced. **Reset defaults**
+keys. **Ctrl+1–4** switches Theme/Style/Effects/Advanced. **Reset defaults**
 restores appearance and interaction defaults and disables login launch; it keeps
 the current position. The tray restore action recovers visibility and interaction.
 
@@ -162,7 +187,7 @@ settings round-trips/recovery/write failures and off-screen/mixed-DPI restoratio
 See [verification](docs/VERIFICATION.md) for exact verified and unverified scope.
 
 On Windows, run `Still.exe --capture` from a writable release folder to export
-**actual WPF renders** of the three presets and settings into `screenshots/` beside
+**actual WPF renders** of all seven presets and settings into `screenshots/` beside
 the executable. This is optional and does not change saved appearance preferences.
 Screenshots do not establish native interaction correctness; use the manual
 Windows checklist as well.

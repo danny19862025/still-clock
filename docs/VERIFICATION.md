@@ -1,3 +1,10 @@
+## Version 2.0.0 Windows validation
+
+- Windows 11 Release build of Still.App succeeded with 0 warnings and 0 errors (.NET SDK 10.0.404).
+- All 27 core regression tests passed, including new checks for effect normalization, settings from 1.x keeping their look, date styles, per-second scheduling for indicators, and theme copy/paste isolation.
+- `Still.exe --verify` exported actual WPF renders of all seven presets and the settings window. They were visually inspected. Neon, HUD, Holo, Terminal and Settings renders are in `docs/images`.
+- Not exercised: drag, scale grip, tray menu, click-through and multi-monitor behaviour with the new renderer, and the installer build.
+
 ## Version 1.1.0 Windows validation
 
 - Windows Release build and self-contained x64 publish succeeded.

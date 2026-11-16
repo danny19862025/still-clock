@@ -67,7 +67,16 @@ try
     {
         var defaults = store.Load();
         True(!defaults.Locked && !defaults.ClickThrough && !defaults.LaunchAtLogin && !defaults.Topmost);
-        Equal("Minimal", defaults.Preset);
+        Equal("Neon", defaults.Preset); True(defaults.Glow);
+    });
+    Test("older settings files keep their look: new effects default off", () =>
+    {
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(store.FilePath, "{\"Version\":1,\"Preset\":\"Glass\",\"Background\":\"Card\",\"TextColor\":\"#FF8080\"}");
+        var loaded = store.Load();
+        Equal("Glass", loaded.Preset); Equal("#FF8080", loaded.TextColor);
+        True(!loaded.Glow && !loaded.Gradient && !loaded.Scanlines && !loaded.BlinkSeparator);
+        Equal("None", loaded.Frame); Equal("None", loaded.SecondsIndicator); Equal(1d, loaded.Opacity);
     });
     Test("preferences persist appearance and physical display identity", () =>
     {
@@ -80,7 +89,7 @@ try
     Test("damaged JSON is preserved and defaults recover", () =>
     {
         File.WriteAllText(store.FilePath, "{ broken");
-        Equal("Minimal", store.Load().Preset); True(store.Notice != null);
+        Equal("Neon", store.Load().Preset); True(store.Notice != null);
         Equal("{ broken", File.ReadAllText(store.FilePath + ".damaged"));
     });
     Test("null and invalid fields normalize safely", () =>
@@ -103,6 +112,62 @@ try
             Equal(name == "Typography" ? 1d : .64, preset.BackgroundOpacity);
         }
     });
+    Test("every preset survives normalization unchanged", () =>
+    {
+        foreach (var name in Preferences.Presets)
+        {
+            var preset = new Preferences(); preset.ApplyPreset(name);
+            string before = System.Text.Json.JsonSerializer.Serialize(preset);
+            preset.Normalize();
+            Equal(before, System.Text.Json.JsonSerializer.Serialize(preset));
+        }
+    });
+    Test("invalid effect fields normalize safely", () =>
+    {
+        File.WriteAllText(store.FilePath, "{\"Frame\":\"Laser\",\"SecondsIndicator\":null,\"FontWeight\":\"Heavy\",\"SurfaceColor\":\"red\",\"Opacity\":0,\"GlowStrength\":9,\"CornerRadius\":-1,\"DateStyle\":\"x\",\"WeekdayStyle\":null,\"Caption\":\"" + new string('x', 90) + "\"}");
+        var loaded = store.Load();
+        Equal("None", loaded.Frame); Equal("None", loaded.SecondsIndicator); Equal("Light", loaded.FontWeight);
+        True(Preferences.IsColor(loaded.SurfaceColor)); Equal(.2, loaded.Opacity); Equal(1d, loaded.GlowStrength);
+        Equal(0d, loaded.CornerRadius); Equal("Long", loaded.DateStyle); Equal("Full", loaded.WeekdayStyle); Equal(40, loaded.Caption.Length);
+    });
 }
 finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+
+Test("seconds indicator and blinking separator tick every second", () =>
+{
+    True(TemplateFormatter.NeedsSeconds(new Preferences { SecondsIndicator = "Bar" }));
+    True(TemplateFormatter.NeedsSeconds(new Preferences { BlinkSeparator = true }));
+    Equal(TimeSpan.FromMilliseconds(1015), TemplateFormatter.NextUpdate(midnight, new Preferences { SecondsIndicator = "Dots" }));
+});
+Test("date styles", () =>
+{
+    var d = new Preferences { WeekdayStyle = "Short", DateStyle = "ISO" };
+    Equal(("THU", "2026-11-12"), TemplateFormatter.DateParts(midnight, d, en));
+    d.Uppercase = false; d.DateStyle = "Short";
+    Equal(("Thu", "12 Nov"), TemplateFormatter.DateParts(midnight, d, en));
+    d.WeekdayStyle = "Line"; d.DateStyle = "Long";
+    Equal(("", "12 November 2026"), TemplateFormatter.DateParts(midnight, d, en));
+    d.Weekday = false; d.Date = false;
+    Equal(("", ""), TemplateFormatter.DateParts(midnight, d, en));
+});
+Test("themes round-trip appearance but never desktop placement or behaviour", () =>
+{
+    var source = new Preferences(); source.ApplyPreset("HUD"); source.AccentColor = "#FF2BD6"; source.Caption = "BRIDGE";
+    source.Position = new("left", 1, 2); source.Locked = true; source.Topmost = true;
+    string theme = source.ExportTheme();
+    True(!theme.Contains("left"));
+    var target = new Preferences { Position = new("primary", 9, 9), Locked = false, Topmost = false };
+    Equal<string?>(null, target.ImportTheme(theme));
+    Equal("HUD", target.Preset); Equal("#FF2BD6", target.AccentColor); Equal("BRIDGE", target.Caption); Equal("Brackets", target.Frame);
+    Equal(new SavedPosition("primary", 9, 9), target.Position); True(!target.Locked && !target.Topmost);
+});
+Test("malformed themes are rejected without changes", () =>
+{
+    var target = new Preferences();
+    foreach (string? bad in new[] { null, "", "hello", "still-theme:{oops", "still-theme:" + new string(' ', 17000) })
+        True(target.ImportTheme(bad) != null);
+    Equal("Minimal", target.Preset);
+    Equal<string?>(null, target.ImportTheme("still-theme:{\"Frame\":\"Laser\",\"Preset\":\"Holo\"}"));
+    Equal("Holo", target.Preset); Equal("None", target.Frame);
+});
 Console.WriteLine($"{count} tests passed.");

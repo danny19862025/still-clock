@@ -29,7 +29,7 @@ public partial class ClockApplication : Application
         if (!first) { System.Windows.MessageBox.Show("Still is already running. Use its clock icon in the notification area to open Settings or unlock it.", "Still"); Shutdown(); return; }
         started = true;
         Preferences = Store.Load();
-        if (e.Args.Contains("--verify")) Preferences.ApplyPreset("Glass");
+        if (e.Args.Contains("--verify")) Preferences.ApplyPreset("Neon");
         if (!Fonts.SystemFontFamilies.Any(f => f.Source == Preferences.Font)) Preferences.Font = "Segoe UI";
         // Read our per-user Run entry rather than trusting a stale JSON preference.
         Preferences.LaunchAtLogin = LoginEnabled();
@@ -93,7 +93,7 @@ public partial class ClockApplication : Application
     {
         var position = Preferences.Position;
         SetLogin(false);
-        Preferences = new Preferences { Position = position, LaunchAtLogin = LoginEnabled() };
+        Preferences = Preferences.CreateDefault(); Preferences.Position = position; Preferences.LaunchAtLogin = LoginEnabled();
         Apply(); Clock.RestorePosition();
     }
 
@@ -101,7 +101,7 @@ public partial class ClockApplication : Application
     {
         using var stream = GetResourceStream(new Uri("pack://application:,,,/still.ico")).Stream;
         trayIcon = new System.Drawing.Icon(stream);
-        tray = new Forms.NotifyIcon { Icon = trayIcon, Text = "Still • desktop clock", Visible = true };
+        tray = new Forms.NotifyIcon { Icon = trayIcon, Text = "Still • futuristic desktop clock", Visible = true };
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Settings…", null, (_, _) => Dispatcher.Invoke(OpenSettings));
         var show = menu.Items.Add("Hide clock", null, (_, _) => Dispatcher.Invoke(ToggleVisibility));
@@ -161,11 +161,11 @@ public partial class ClockApplication : Application
     private void CaptureScreenshots()
     {
         string dir = Path.Combine(AppContext.BaseDirectory, "screenshots"); Directory.CreateDirectory(dir);
-        foreach (string preset in new[] { "Minimal", "Typography", "Glass" })
+        foreach (string preset in Preferences.Presets)
         {
             var p = new Preferences(); p.ApplyPreset(preset);
             var face = new ClockFace(); face.Update(p, new DateTime(2026, 11, 12, 9, 41, 28));
-            var background = new Border { Background = new LinearGradientBrush(Color.FromRgb(26, 51, 59), Color.FromRgb(58, 78, 68), 35), Padding = new Thickness(48), Child = face };
+            var background = new Border { Background = new LinearGradientBrush(Color.FromRgb(8, 14, 30), Color.FromRgb(40, 18, 60), 35), Padding = new Thickness(48), Child = face };
             background.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity)); background.Arrange(new Rect(background.DesiredSize)); background.UpdateLayout();
             SaveVisual(background, Path.Combine(dir, preset.ToLowerInvariant() + ".png"));
         }

@@ -1,3 +1,9 @@
+## Version 2.1.0 Windows validation
+
+- Windows 11 Release build succeeded. All 29 core regression tests passed, including the new layout and compact-time tests.
+- `Still.exe --verify` exported actual WPF renders of all nine presets and Settings. The Poster and Neon Poster renders were visually inspected and are in `docs/images`.
+- Not exercised: drag, the scale grip, and the tray menu with the Poster layout, and the installer build.
+
 ## Version 2.0.0 Windows validation
 
 - Windows 11 Release build of Still.App succeeded with 0 warnings and 0 errors (.NET SDK 10.0.404).

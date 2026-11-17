@@ -76,6 +76,15 @@ public static class TemplateFormatter
         return p.Uppercase ? (weekday.ToUpper(culture), date.ToUpper(culture)) : (weekday, date);
     }
 
+    /// <summary>The single-line time used by the Poster layout, e.g. "8:30 PM" or "20:30:05".</summary>
+    public static string CompactTime(DateTime time, Preferences p, CultureInfo? culture = null)
+    {
+        culture ??= CultureInfo.CurrentCulture;
+        string text = time.ToString((p.Hour24 ? "HH:mm" : "h:mm") + (p.Seconds ? ":ss" : ""), culture);
+        if (!p.Hour24 && p.AmPm) text += " " + time.ToString("tt", culture).ToUpper(culture);
+        return text;
+    }
+
     /// <summary>A compact UTC offset tag such as "UTC+11:00".</summary>
     public static string ZoneTag(DateTime time)
     {

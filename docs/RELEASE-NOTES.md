@@ -1,14 +1,10 @@
-Still 2.0.0 is a futuristic redesign with far more ways to customize the clock.
+Still 2.1.0 adds a Poster layout inspired by editorial date widgets.
 
-- Four new presets: Neon (the new default), HUD, Holo and Terminal. Minimal, Type and Glass are still available.
-- New effects: neon glow with adjustable strength, gradient text, CRT scanlines, bracket or outline frames, and a header caption with an optional UTC offset tag.
-- Seconds indicators: a sweeping bar, segments or dots, plus an optional blinking separator.
-- More style controls: font weight, letter spacing, weekday style (full, short or its own line), date format (long, short, ISO or numeric), uppercase, surface tint, corner radius and widget opacity.
-- Eight one-click colour palettes.
-- Copy and paste themes as text. Position and desktop behaviour never travel with a theme.
-- A redesigned settings window with a live preset gallery and Theme, Style, Effects and Advanced pages (Ctrl+1–4).
+- New Poster layout: a huge day number that fades towards its base, the bold month across it, the time with a fine underline beneath, and the weekday running up the side.
+- Two new presets: Poster (lavender and white) and Neon Poster (hot magenta with glow and a seconds bar).
+- Settings > Style has a new Layout choice (Classic or Poster) and a toggle for the day-number fade. Fonts, colours, palettes, glow, gradient, frames, surfaces and seconds indicators all work with Poster.
 
-Existing preferences are kept. A clock set up in 1.x looks the same after upgrading until you choose a new preset or effect.
+Existing preferences are kept and stay on the Classic layout until you choose Poster.
 
 Install: download Still-Setup-win-x64.exe, exit the old Still from its notification-area icon, and run Setup. The installer installs for your Windows user without administrator access and includes .NET. A portable Still-win-x64.zip is also available.
 

@@ -5,7 +5,8 @@ namespace Still.Core;
 
 public sealed class Preferences
 {
-    public static readonly string[] Presets = ["Neon", "HUD", "Holo", "Terminal", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Presets = ["Neon", "Poster", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Layouts = ["Classic", "Poster"];
     public static readonly string[] Weights = ["Thin", "Light", "Regular", "SemiBold", "Bold"];
     public static readonly string[] Frames = ["None", "Brackets", "Outline"];
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
@@ -22,6 +23,10 @@ public sealed class Preferences
 
     public int Version { get; set; } = 2;
     public string Preset { get; set; } = "Minimal";
+    /// <summary>Classic stacks time over date. Poster shows a huge day number with the month, time and a vertical weekday.</summary>
+    public string Layout { get; set; } = "Classic";
+    /// <summary>Poster layout: fade the big day number towards its base.</summary>
+    public bool Fade { get; set; } = true;
     public string Font { get; set; } = "Segoe UI Variable Display";
     public string FontWeight { get; set; } = "Light";
     public double FontSize { get; set; } = 80;
@@ -82,9 +87,17 @@ public sealed class Preferences
         Alignment = "Center"; Scale = 1; Weekday = Date = true; WeekdayStyle = "Full"; DateStyle = "Long"; Uppercase = true;
         Seconds = false; Advanced = false;
         Glow = Gradient = Scanlines = BlinkSeparator = ShowZone = false; GlowStrength = .6;
-        Frame = "None"; SecondsIndicator = "None"; Caption = "";
+        Frame = "None"; SecondsIndicator = "None"; Caption = ""; Layout = "Classic"; Fade = true;
         switch (preset)
         {
+            case "Poster":
+                Layout = "Poster"; Font = "Bahnschrift"; FontWeight = "Bold"; TextColor = "#FFFFFF"; AccentColor = "#C98BE3";
+                Alignment = "Left";
+                break;
+            case "Neon Poster":
+                Layout = "Poster"; Font = "Bahnschrift"; FontWeight = "Bold"; TextColor = "#E9FDFF"; AccentColor = "#FF2BD6";
+                Glow = true; GlowStrength = .5; SecondsIndicator = "Bar"; Alignment = "Left";
+                break;
             case "Typography":
                 FontSize = 96; Background = "Solid"; BackgroundOpacity = 1; WeekdayStyle = "Line";
                 break;
@@ -121,6 +134,7 @@ public sealed class Preferences
     {
         Version = 2;
         if (!Presets.Contains(Preset)) Preset = "Minimal";
+        if (!Layouts.Contains(Layout)) Layout = "Classic";
         if (string.IsNullOrWhiteSpace(Font) || Font.Length > 150) Font = "Segoe UI Variable Display";
         if (!Weights.Contains(FontWeight)) FontWeight = "Light";
         FontSize = Limit(FontSize, 32, 160, 80);

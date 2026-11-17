@@ -301,6 +301,11 @@ public sealed class SettingsWindow : Window
 
     private void StylePage()
     {
+        Section("Layout");
+        Choice("La_yout", Preferences.Layouts, P.Layout, v => P.Layout = v);
+        Note("Poster shows a huge day number with the month across it, the time beneath and the weekday running up the side. Alignment, date format and weekday style apply to Classic.");
+        Check("Fade the poster day number", P.Fade, v => P.Fade = v);
+
         Section("Typeface");
         var fonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();
         if (!fonts.Contains(P.Font)) fonts.Insert(0, P.Font);

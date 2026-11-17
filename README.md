@@ -6,8 +6,10 @@ Still is an actual borderless WPF desktop widget with a separate settings window
 and notification-area menu. C# / .NET 10 LTS; no web view, server, account,
 telemetry, network calls, plugins, or administrator privileges.
 
-| Neon | HUD |
+| Poster | Neon Poster |
 | --- | --- |
+| ![Poster preset](docs/images/preset-poster.png) | ![Neon Poster preset](docs/images/preset-neon-poster.png) |
+| **Neon** | **HUD** |
 | ![Neon preset](docs/images/preset-neon.png) | ![HUD preset](docs/images/preset-hud.png) |
 | **Holo** | **Terminal** |
 | ![Holo preset](docs/images/preset-holo.png) | ![Terminal preset](docs/images/preset-terminal.png) |
@@ -35,15 +37,17 @@ For portable use, extract **Still-win-x64.zip** into a permanent folder and run 
 
 Settings has four pages (**Ctrl+1–4**):
 
-- **01 Theme:** a live gallery of all seven presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
-- **02 Style:** font, weight, size, letter spacing, text and accent colours, time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **01 Theme:** a live gallery of all nine presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
+- **02 Style:** layout (Classic or Poster) and day-number fade, font, weight, size, letter spacing, text and accent colours, time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
 - **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
 
-### Seven starting points
+### Nine starting points
 
 - **Neon** (default): thin glowing digits, a sweeping seconds bar, a blinking colon and an ISO date.
+- **Poster:** an editorial layout. A huge lavender day number fades out towards its base, the bold month runs across it, the time and a fine underline sit beneath, and the weekday runs up the side.
+- **Neon Poster:** the Poster layout in hot magenta with glow, and a seconds bar in place of the underline.
 - **HUD:** a scanlined instrument panel with corner brackets, a `SYS.CHRONO` caption, a UTC offset tag and segmented seconds.
 - **Holo:** magenta-to-cyan gradient digits in an outlined glass card with a dotted seconds track.
 - **Terminal:** glowing green monospace on a solid CRT panel with scanlines and a `> now` prompt.
@@ -187,7 +191,7 @@ settings round-trips/recovery/write failures and off-screen/mixed-DPI restoratio
 See [verification](docs/VERIFICATION.md) for exact verified and unverified scope.
 
 On Windows, run `Still.exe --capture` from a writable release folder to export
-**actual WPF renders** of all seven presets and settings into `screenshots/` beside
+**actual WPF renders** of all nine presets and settings into `screenshots/` beside
 the executable. This is optional and does not change saved appearance preferences.
 Screenshots do not establish native interaction correctness; use the manual
 Windows checklist as well.

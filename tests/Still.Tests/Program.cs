@@ -133,6 +133,23 @@ try
 }
 finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
 
+Test("poster layout: presets, normalization and older files", () =>
+{
+    var poster = new Preferences(); poster.ApplyPreset("Poster");
+    Equal("Poster", poster.Layout); True(poster.Fade);
+    poster.ApplyPreset("Neon"); Equal("Classic", poster.Layout);
+    var bad = new Preferences { Layout = "Spiral" }; bad.Normalize(); Equal("Classic", bad.Layout);
+    var legacy = System.Text.Json.JsonSerializer.Deserialize<Preferences>("{\"Preset\":\"Glass\"}")!; legacy.Normalize();
+    Equal("Classic", legacy.Layout);
+});
+Test("poster compact time follows 12/24-hour, seconds and AM/PM", () =>
+{
+    var evening = new DateTime(2026, 11, 17, 20, 30, 5);
+    Equal("8:30 PM", TemplateFormatter.CompactTime(evening, new Preferences { Hour24 = false }, en));
+    Equal("8:30", TemplateFormatter.CompactTime(evening, new Preferences { Hour24 = false, AmPm = false }, en));
+    Equal("20:30:05", TemplateFormatter.CompactTime(evening, new Preferences { Seconds = true }, en));
+});
+
 Test("seconds indicator and blinking separator tick every second", () =>
 {
     True(TemplateFormatter.NeedsSeconds(new Preferences { SecondsIndicator = "Bar" }));

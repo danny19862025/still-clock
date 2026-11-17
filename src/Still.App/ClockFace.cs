@@ -57,7 +57,12 @@ public sealed class ClockFace : FrameworkElement
             y += size * 2;
         }
 
-        if (p.Advanced)
+        poster = p.Layout == "Poster" && !p.Advanced;
+        if (poster)
+        {
+            y = LayoutPoster(y, culture);
+        }
+        else if (p.Advanced)
         {
             var parts = TemplateFormatter.Format(p.Template, now, p).Split('\n');
             for (int i = 0; i < parts.Length; i++)
@@ -132,24 +137,113 @@ public sealed class ClockFace : FrameworkElement
 
     // Small uppercase lines get extra tracking for an instrument-panel feel.
     private double Tracking(double size) => p.LetterSpacing * size / 80 + (size < mainSize * .5 && p.Uppercase ? size * .12 : 0);
-    private double Advance(char c, double size)
+    private double Advance(char c, double size, double extra = 0)
     {
-        if (char.IsAsciiDigit(c)) return cell * size / mainSize + Tracking(size);
+        if (char.IsAsciiDigit(c)) return cell * size / mainSize + Tracking(size) + extra;
         if (!widths.TryGetValue((c, size), out double w))
             widths[(c, size)] = w = Glyph(c.ToString(), size, Brushes.White).WidthIncludingTrailingWhitespace;
-        return w + Tracking(size);
+        return w + Tracking(size) + extra;
     }
-    private double StableWidth(string s, double size) => s.Length == 0 ? 0 : s.Sum(c => Advance(c, size)) - Tracking(size);
+    private double StableWidth(string s, double size, double extra = 0) => s.Length == 0 ? 0 : s.Sum(c => Advance(c, size, extra)) - Tracking(size) - extra;
 
-    private void DrawStable(DrawingContext dc, string text, double size, Brush brush, double x, double y, Brush? dimColon = null)
+    private void DrawStable(DrawingContext dc, string text, double size, Brush brush, double x, double y, Brush? dimColon = null, double extra = 0)
     {
         foreach (char c in text)
         {
             var glyph = Glyph(c.ToString(), size, c == ':' && dimColon != null ? dimColon : brush);
-            double advance = Advance(c, size);
-            dc.DrawText(glyph, new Point(x + (advance - Tracking(size) - glyph.WidthIncludingTrailingWhitespace) / 2, y));
+            double advance = Advance(c, size, extra);
+            dc.DrawText(glyph, new Point(x + (advance - Tracking(size) - extra - glyph.WidthIncludingTrailingWhitespace) / 2, y));
             x += advance;
         }
+    }
+
+    // Ink (not line-box) top offset and height of a sample glyph, so poster parts align to visible edges.
+    private (double Top, double Height) Ink(string sample, double size)
+    {
+        string k = $"ink|{sample}|{size}";
+        if (!reserves.TryGetValue(k, out double top))
+        {
+            var b = Glyph(sample, size, Brushes.White).BuildGeometry(new Point(0, 0)).Bounds;
+            reserves[k] = top = b.IsEmpty ? 0 : b.Top;
+            reserves[k + "|h"] = b.IsEmpty ? size * .7 : b.Height;
+        }
+        return (top, reserves[k + "|h"]);
+    }
+
+    // ---- Poster layout ----
+    private bool poster;
+    private string pDay = "", pMonth = "", pTime = "", pWeekday = "";
+    private double pY, pNumSize, pNumTop, pNumH, pNumX, pNumExtra, pMonthSize, pMonthX, pMonthY, pTimeSize, pTimeY, pLineY, pLineW, pWkSize, pWkExtra, pWkX, pWkBottom;
+
+    private double LayoutPoster(double y, CultureInfo culture)
+    {
+        double s = p.Scale;
+        pY = y;
+        pNumSize = mainSize * 3.2; pNumExtra = -pNumSize * .03;
+        (pNumTop, pNumH) = Ink("8", pNumSize);
+        pDay = now.Day.ToString(CultureInfo.InvariantCulture);
+        double numW = StableWidth("88", pNumSize, pNumExtra);
+
+        pWkSize = mainSize * .16; pWkExtra = pWkSize * .85;
+        pWeekday = p.Weekday ? Case(now.ToString("dddd", culture), culture) : "";
+        double wkLength = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => StableWidth(Case(d, culture), pWkSize, pWkExtra)) : 0;
+        double wkColumn = p.Weekday ? Glyph("D", pWkSize, Brushes.White).Height + mainSize * .22 : 0;
+        pWkX = padding;
+        // Digits sit centred in a fixed cell, so a narrow "1" leaves room: tuck the number towards the weekday.
+        pNumX = padding + wkColumn - (p.Weekday ? numW * .06 : 0);
+
+        pMonthSize = mainSize * .72;
+        pMonth = Case(now.ToString("MMMM", culture), culture);
+        double monthW = culture.DateTimeFormat.MonthNames.Where(m => m.Length > 0).Max(m => StableWidth(Case(m, culture), pMonthSize));
+        var (monthTop, monthH) = Ink("M", pMonthSize);
+        pMonthX = pNumX + numW * .24;
+        double monthCap = y + pNumH * .4;
+        pMonthY = monthCap - monthTop;
+
+        pTimeSize = mainSize * .21;
+        pTime = TemplateFormatter.CompactTime(now, p, culture);
+        var (timeTop, timeH) = Ink("8", pTimeSize);
+        double timeCap = monthCap + monthH + mainSize * .3;
+        pTimeY = timeCap - timeTop;
+        double timeW = StableWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture), pTimeSize);
+        pLineY = timeCap + timeH + mainSize * .2;
+        pLineW = Math.Max(mainSize * 1.1, timeW * .9);
+        if (p.SecondsIndicator != "None") pLineW = Math.Max(pLineW, monthW * .6);
+
+        pWkBottom = y + Math.Max(pNumH, wkLength);
+        bodyWidth = Math.Max(bodyWidth + padding, pNumX + numW);
+        bodyWidth = Math.Max(bodyWidth, pMonthX + Math.Max(monthW, Math.Max(timeW, pLineW))) - padding;
+        return Math.Max(Math.Max(y + pNumH, pWkBottom), pLineY + 8 * s);
+    }
+
+    private string Case(string text, CultureInfo culture) => p.Uppercase ? text.ToUpper(culture) : text;
+
+    private void RenderPoster(DrawingContext dc, Color text, Color accent, Brush inkBrush, Brush? dim)
+    {
+        double s = p.Scale;
+        // Big day number: accent colour (or a text-to-accent sweep), optionally fading towards its base.
+        Brush numBrush = p.Gradient
+            ? Frozen(new LinearGradientBrush(accent, text, 0) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(pNumX, 0), EndPoint = new Point(pNumX + StableWidth("88", pNumSize, pNumExtra), 0) })
+            : Frozen(new SolidColorBrush(accent));
+        if (p.Fade)
+            dc.PushOpacityMask(new LinearGradientBrush(new GradientStopCollection { new(Colors.Black, 0), new(Color.FromArgb(225, 0, 0, 0), .45), new(Color.FromArgb(28, 0, 0, 0), 1) }, 90)
+            { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, pY), EndPoint = new Point(0, pY + pNumH) });
+        DrawStable(dc, pDay, pNumSize, numBrush, pNumX, pY - pNumTop, extra: pNumExtra);
+        if (p.Fade) dc.Pop();
+
+        // Weekday reads bottom-to-top beside the number.
+        if (pWeekday.Length > 0)
+        {
+            dc.PushTransform(new RotateTransform(-90, pWkX, pWkBottom));
+            DrawStable(dc, pWeekday, pWkSize, Frozen(new SolidColorBrush(Alpha(text, .9))), pWkX, pWkBottom, extra: pWkExtra);
+            dc.Pop();
+        }
+        DrawStable(dc, pMonth, pMonthSize, inkBrush, pMonthX, pMonthY);
+        DrawStable(dc, pTime, pTimeSize, Frozen(new SolidColorBrush(text)), pMonthX, pTimeY, dim);
+        if (p.SecondsIndicator == "None")
+            dc.DrawRectangle(Frozen(new SolidColorBrush(Alpha(text, .85))), null, new Rect(pMonthX, pLineY, pLineW, Math.Max(1, 1.6 * s)));
+        else
+            DrawIndicator(dc, accent, pMonthX, pLineW, pLineY);
     }
 
     private double LineX(double width) => padding + (p.Alignment == "Center" ? (bodyWidth - width) / 2 : p.Alignment == "Right" ? bodyWidth - width : 0);
@@ -212,7 +306,8 @@ public sealed class ClockFace : FrameworkElement
                         break;
                 }
             }
-            if (indicatorY >= 0) DrawIndicator(dc, accent);
+            if (indicatorY >= 0) DrawIndicator(dc, accent, padding, bodyWidth, indicatorY);
+            if (poster) RenderPoster(dc, text, accent, inkBrush, dim);
         }
         ink.Effect = p.Glow ? new DropShadowEffect { Color = accent, ShadowDepth = 0, BlurRadius = GlowRadius(), Opacity = .45 + .55 * p.GlowStrength, RenderingBias = RenderingBias.Quality } : null;
 
@@ -258,9 +353,9 @@ public sealed class ClockFace : FrameworkElement
         }
     }
 
-    private void DrawIndicator(DrawingContext dc, Color accent)
+    private void DrawIndicator(DrawingContext dc, Color accent, double x, double w, double y)
     {
-        double x = padding, w = bodyWidth, y = indicatorY, s = p.Scale;
+        double s = p.Scale;
         double progress = (now.Second + 1) / 60.0;
         var lit = new SolidColorBrush(accent); var dark = new SolidColorBrush(Alpha(accent, .18));
         switch (p.SecondsIndicator)

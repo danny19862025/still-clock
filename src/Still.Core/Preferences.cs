@@ -5,8 +5,8 @@ namespace Still.Core;
 
 public sealed class Preferences
 {
-    public static readonly string[] Presets = ["Neon", "Poster", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
-    public static readonly string[] Layouts = ["Classic", "Poster"];
+    public static readonly string[] Presets = ["Neon", "Poster", "Signature", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Layouts = ["Classic", "Poster", "Script"];
     public static readonly string[] Weights = ["Thin", "Light", "Regular", "SemiBold", "Bold"];
     public static readonly string[] Frames = ["None", "Brackets", "Outline"];
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
@@ -27,6 +27,10 @@ public sealed class Preferences
     public string Layout { get; set; } = "Classic";
     /// <summary>Poster layout: fade the big day number towards its base.</summary>
     public bool Fade { get; set; } = true;
+    /// <summary>Script layout: the handwriting font used for the weekday.</summary>
+    public string ScriptFont { get; set; } = "Segoe Script";
+    /// <summary>Script layout: horizontal width of the tall day number (1 = the font's natural width).</summary>
+    public double Condense { get; set; } = .6;
     public string Font { get; set; } = "Segoe UI Variable Display";
     public string FontWeight { get; set; } = "Light";
     public double FontSize { get; set; } = 80;
@@ -88,8 +92,13 @@ public sealed class Preferences
         Seconds = false; Advanced = false;
         Glow = Gradient = Scanlines = BlinkSeparator = ShowZone = false; GlowStrength = .6;
         Frame = "None"; SecondsIndicator = "None"; Caption = ""; Layout = "Classic"; Fade = true;
+        ScriptFont = "Segoe Script"; Condense = .6;
         switch (preset)
         {
+            case "Signature":
+                Layout = "Script"; Font = "Bahnschrift"; FontWeight = "Regular"; TextColor = "#FFFFFF"; AccentColor = "#3F6BFF";
+                Fade = false; Alignment = "Left";
+                break;
             case "Poster":
                 Layout = "Poster"; Font = "Bahnschrift"; FontWeight = "Bold"; TextColor = "#FFFFFF"; AccentColor = "#C98BE3";
                 Alignment = "Left";
@@ -135,6 +144,8 @@ public sealed class Preferences
         Version = 2;
         if (!Presets.Contains(Preset)) Preset = "Minimal";
         if (!Layouts.Contains(Layout)) Layout = "Classic";
+        if (string.IsNullOrWhiteSpace(ScriptFont) || ScriptFont.Length > 150) ScriptFont = "Segoe Script";
+        Condense = Limit(Condense, .35, 1, .6);
         if (string.IsNullOrWhiteSpace(Font) || Font.Length > 150) Font = "Segoe UI Variable Display";
         if (!Weights.Contains(FontWeight)) FontWeight = "Light";
         FontSize = Limit(FontSize, 32, 160, 80);

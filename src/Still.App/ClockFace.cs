@@ -58,9 +58,14 @@ public sealed class ClockFace : FrameworkElement
         }
 
         poster = p.Layout == "Poster" && !p.Advanced;
+        scriptLayout = p.Layout == "Script" && !p.Advanced;
         if (poster)
         {
             y = LayoutPoster(y, culture);
+        }
+        else if (scriptLayout)
+        {
+            y = LayoutScript(y, culture);
         }
         else if (p.Advanced)
         {
@@ -174,6 +179,104 @@ public sealed class ClockFace : FrameworkElement
     private bool poster;
     private string pDay = "", pMonth = "", pTime = "", pWeekday = "";
     private double pY, pNumSize, pNumTop, pNumH, pNumX, pNumExtra, pMonthSize, pMonthX, pMonthY, pTimeSize, pTimeY, pLineY, pLineW, pWkSize, pWkExtra, pWkX, pWkBottom;
+
+    // ---- Script layout: tall condensed day number, vertical month, handwritten weekday, bold time ----
+    private bool scriptLayout;
+    private Typeface scriptFace = new("Segoe Script"), boldFace = new("Segoe UI");
+    private FormattedText? sWeekday, sTime;
+    private string sDay = "", sMonth = "";
+    private double sY, sNumSize, sNumTop, sNumH, sNumX, sNumW, sNumExtra, sMonthSize, sMonthExtra, sMonthX, sMonthBottom,
+        sScriptX, sScriptBase, sTimeCenter, sTimeY, sTimeW, sIndicatorY;
+
+    private FormattedText Text(string s, double size, Brush brush, Typeface face) =>
+        new(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+    private double LayoutScript(double y, CultureInfo culture)
+    {
+        double s = p.Scale, cond = p.Condense;
+        scriptFace = new Typeface(new FontFamily(p.ScriptFont), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        boldFace = new Typeface(new FontFamily(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        sY = y;
+        sNumSize = mainSize * 2.7; sNumExtra = -sNumSize * .02;
+        (sNumTop, sNumH) = Ink("8", sNumSize);
+        sDay = now.ToString("dd", CultureInfo.InvariantCulture);
+        sNumW = StableWidth("88", sNumSize, sNumExtra) * cond;
+
+        // Month runs up the left edge, its top level with the top of the number.
+        sMonthSize = mainSize * .21; sMonthExtra = sMonthSize * .1;
+        sMonth = p.Date ? Case(now.ToString("MMMM", culture), culture) : "";
+        double monthLength = StableWidth(sMonth, sMonthSize, sMonthExtra) * cond;
+        double monthReserve = p.Date ? culture.DateTimeFormat.MonthNames.Where(m => m.Length > 0).Max(m => StableWidth(Case(m, culture), sMonthSize, sMonthExtra)) * cond : 0;
+        double column = p.Date ? Glyph("M", sMonthSize, Brushes.White).Height + mainSize * .1 : 0;
+        sMonthX = padding;
+        sMonthBottom = y + monthLength;
+        sNumX = padding + column;
+
+        // Handwritten weekday sweeps across the lower part of the number.
+        double scriptSize = mainSize * .64;
+        sWeekday = p.Weekday ? Text(now.ToString("dddd", culture), scriptSize, Brushes.White, scriptFace) : null;
+        double scriptReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => Text(d, scriptSize, Brushes.White, scriptFace).WidthIncludingTrailingWhitespace) : 0;
+        // Starts just inside the number and sweeps out to the right, like a signature.
+        sScriptX = sNumX + sNumW * .12;
+        sScriptBase = y + sNumH * .9;
+        double scriptBottom = p.Weekday ? sScriptBase + scriptSize * .3 : y + sNumH;
+
+        // Bold time centred beneath the number.
+        double timeSize = mainSize * .42;
+        string time = TemplateFormatter.CompactTime(now, p, culture).Replace(" ", "");
+        sTime = Text(time, timeSize, Brushes.White, boldFace);
+        sTimeW = Text(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).Replace(" ", "").Replace('2', '8'), timeSize, Brushes.White, boldFace).WidthIncludingTrailingWhitespace;
+        var timeInk = Text("8", timeSize, Brushes.White, boldFace).BuildGeometry(new Point(0, 0)).Bounds;
+        double timeCap = Math.Max(y + sNumH, scriptBottom) + mainSize * .16;
+        sTimeY = timeCap - timeInk.Top;
+        double timeBottom = timeCap + timeInk.Height;
+        sTimeCenter = sNumX + sNumW / 2;
+        sIndicatorY = timeBottom + mainSize * .16;
+
+        // Keep everything inside the padding even with a long weekday or time.
+        double left = Math.Min(Math.Min(sScriptX, sTimeCenter - sTimeW / 2), sMonthX);
+        if (left < padding) { double shift = padding - left; sMonthX += shift; sNumX += shift; sScriptX += shift; sTimeCenter += shift; }
+        double right = Math.Max(Math.Max(sNumX + sNumW, sScriptX + scriptReserve), sTimeCenter + sTimeW / 2);
+        bodyWidth = Math.Max(bodyWidth, right - padding);
+        double bottom = p.SecondsIndicator != "None" ? sIndicatorY + 8 * s : timeBottom;
+        return Math.Max(bottom, y + monthReserve);
+    }
+
+    private void RenderScript(DrawingContext dc, Color text, Color accent, Brush inkBrush)
+    {
+        double cond = p.Condense;
+        Brush numBrush = p.Gradient
+            ? Frozen(new LinearGradientBrush(text, accent, 90) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, sY), EndPoint = new Point(0, sY + sNumH) })
+            : Frozen(new SolidColorBrush(text));
+        if (p.Fade)
+            dc.PushOpacityMask(new LinearGradientBrush(new GradientStopCollection { new(Colors.Black, 0), new(Color.FromArgb(225, 0, 0, 0), .45), new(Color.FromArgb(28, 0, 0, 0), 1) }, 90)
+            { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, sY), EndPoint = new Point(0, sY + sNumH) });
+        dc.PushTransform(new ScaleTransform(cond, 1, sNumX, 0));
+        DrawStable(dc, sDay, sNumSize, numBrush, sNumX, sY - sNumTop, extra: sNumExtra);
+        dc.Pop();
+        if (p.Fade) dc.Pop();
+
+        if (sMonth.Length > 0)
+        {
+            dc.PushTransform(new RotateTransform(-90, sMonthX, sMonthBottom));
+            dc.PushTransform(new ScaleTransform(cond, 1, sMonthX, sMonthBottom));
+            DrawStable(dc, sMonth, sMonthSize, inkBrush, sMonthX, sMonthBottom, extra: sMonthExtra);
+            dc.Pop(); dc.Pop();
+        }
+        if (sWeekday != null)
+        {
+            sWeekday.SetForegroundBrush(Frozen(new SolidColorBrush(accent)));
+            dc.PushTransform(new RotateTransform(-8, sScriptX, sScriptBase));
+            dc.DrawText(sWeekday, new Point(sScriptX, sScriptBase - sWeekday.Baseline));
+            dc.Pop();
+        }
+        if (sTime != null)
+        {
+            sTime.SetForegroundBrush(Frozen(new SolidColorBrush(text)));
+            dc.DrawText(sTime, new Point(sTimeCenter - sTime.WidthIncludingTrailingWhitespace / 2, sTimeY));
+        }
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, sTimeCenter - sTimeW / 2, sTimeW, sIndicatorY);
+    }
 
     private double LayoutPoster(double y, CultureInfo culture)
     {
@@ -308,6 +411,7 @@ public sealed class ClockFace : FrameworkElement
             }
             if (indicatorY >= 0) DrawIndicator(dc, accent, padding, bodyWidth, indicatorY);
             if (poster) RenderPoster(dc, text, accent, inkBrush, dim);
+            if (scriptLayout) RenderScript(dc, text, accent, inkBrush);
         }
         ink.Effect = p.Glow ? new DropShadowEffect { Color = accent, ShadowDepth = 0, BlurRadius = GlowRadius(), Opacity = .45 + .55 * p.GlowStrength, RenderingBias = RenderingBias.Quality } : null;
 

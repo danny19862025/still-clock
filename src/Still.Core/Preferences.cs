@@ -5,8 +5,8 @@ namespace Still.Core;
 
 public sealed class Preferences
 {
-    public static readonly string[] Presets = ["Neon", "Poster", "Signature", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
-    public static readonly string[] Layouts = ["Classic", "Poster", "Script"];
+    public static readonly string[] Presets = ["Neon", "Poster", "Signature", "Midnight", "Arc", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Layouts = ["Classic", "Poster", "Script", "Overlay", "Arc"];
     public static readonly string[] Weights = ["Thin", "Light", "Regular", "SemiBold", "Bold"];
     public static readonly string[] Frames = ["None", "Brackets", "Outline"];
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
@@ -95,6 +95,14 @@ public sealed class Preferences
         ScriptFont = "Segoe Script"; Condense = .6;
         switch (preset)
         {
+            case "Midnight":
+                Layout = "Overlay"; Font = "Bahnschrift"; FontWeight = "Regular"; TextColor = "#E6E6E6"; AccentColor = "#FFFFFF";
+                Fade = false; Condense = .62; Alignment = "Center";
+                break;
+            case "Arc":
+                Layout = "Arc"; FontWeight = "Regular"; FontSize = 80; TextColor = "#FFFFFF"; AccentColor = "#2BD9D9";
+                Fade = true; Alignment = "Center";
+                break;
             case "Signature":
                 Layout = "Script"; Font = "Bahnschrift"; FontWeight = "Regular"; TextColor = "#FFFFFF"; AccentColor = "#3F6BFF";
                 Fade = false; Alignment = "Left";

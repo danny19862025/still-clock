@@ -303,14 +303,14 @@ public sealed class SettingsWindow : Window
     {
         Section("Layout");
         Choice("La_yout", Preferences.Layouts, P.Layout, v => P.Layout = v);
-        Note("Poster: a huge day number with the month across it and the weekday up the side. Script: a tall day number, the month up the side, a handwritten weekday and a bold time. Alignment, date format and weekday style apply to Classic.");
+        Note("Poster: a huge day number with the month across it and the weekday up the side. Script: a tall day number, the month up the side, a handwritten weekday and a bold time. Overlay: a big see-through time with a handwritten weekday across it and the date below. Arc: hours over minutes with a glowing arc and a small date; a seconds indicator turns the arc into a seconds sweep. Alignment, date format and weekday style apply to Classic.");
         Check("Fade the big day number", P.Fade, v => P.Fade = v);
         var allFonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();
         string[] scripts = ["Segoe Script", "Ink Free", "Segoe Print", "Gabriola", "Lucida Handwriting", "Brush Script MT", "Mistral"];
         var scriptChoices = scripts.Where(allFonts.Contains).Concat(allFonts.Where(f => !scripts.Contains(f))).ToList();
         if (!scriptChoices.Contains(P.ScriptFont)) scriptChoices.Insert(0, P.ScriptFont);
         Choice("Script _handwriting font", scriptChoices, P.ScriptFont, v => P.ScriptFont = v);
-        Range("Script day-number _width", .35, 1, P.Condense, .05, v => P.Condense = v, "0%");
+        Range("Script / Overlay number _width", .35, 1, P.Condense, .05, v => P.Condense = v, "0%");
 
         Section("Typeface");
         var fonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();

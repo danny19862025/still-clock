@@ -150,6 +150,21 @@ Test("script layout: preset, clamped width and safe font fallback", () =>
     Equal(1d, bad.Condense); Equal("Segoe Script", bad.ScriptFont);
     bad.Condense = double.NaN; bad.Normalize(); Equal(.6, bad.Condense);
 });
+Test("overlay and arc presets select their layouts", () =>
+{
+    var look = new Preferences(); look.ApplyPreset("Midnight"); Equal("Overlay", look.Layout);
+    look.ApplyPreset("Arc"); Equal("Arc", look.Layout); True(look.Fade);
+});
+Test("ordinal dates in English, plain dates elsewhere", () =>
+{
+    Equal("27th February 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 2, 27), en));
+    Equal("1st March 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 3, 1), en));
+    Equal("2nd March 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 3, 2), en));
+    Equal("3rd March 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 3, 3), en));
+    Equal("11th March 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 3, 11), en));
+    Equal("22nd March 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 3, 22), en));
+    Equal("27 Februar 2026", TemplateFormatter.OrdinalDate(new DateTime(2026, 2, 27), CultureInfo.GetCultureInfo("de-DE")));
+});
 Test("poster compact time follows 12/24-hour, seconds and AM/PM", () =>
 {
     var evening = new DateTime(2026, 11, 17, 20, 30, 5);

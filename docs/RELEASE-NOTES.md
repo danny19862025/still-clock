@@ -1,8 +1,9 @@
-Still 2.2.0 adds a Script layout with a handwritten weekday.
+Still 2.3.0 adds two more layouts: Overlay and Arc.
 
-- New Script layout: a tall, narrow day number, the month running up its side, a handwritten weekday sweeping across the number, and a bold time beneath.
-- New Signature preset: white number and time with a blue script weekday.
-- Settings > Style can now choose the handwriting font (Segoe Script, Ink Free, Segoe Print, Gabriola or any installed font) and adjust how narrow the day number is. The day-number fade, colours, palettes, glow, gradient, frames, surfaces and seconds indicators also work with Script.
+- New Overlay layout: a big see-through condensed time, a handwritten weekday across it, and a condensed ordinal date line such as 27TH FEBRUARY 2026.
+- New Arc layout: hours stacked over minutes that fade out, a glowing arc across them, and a small date such as 17 Tue Sep. With a seconds indicator turned on, the arc sweeps with the seconds.
+- New presets: Midnight (Overlay, grey and white) and Arc (white with a teal arc).
+- The handwriting font and number width settings also apply to Overlay. Colours, palettes, the fade, glow, frames and surfaces work with both layouts.
 
 Existing preferences are kept and stay on their current layout until you choose another.
 

@@ -59,7 +59,17 @@ public sealed class ClockFace : FrameworkElement
 
         poster = p.Layout == "Poster" && !p.Advanced;
         scriptLayout = p.Layout == "Script" && !p.Advanced;
-        if (poster)
+        overlayLayout = p.Layout == "Overlay" && !p.Advanced;
+        arcLayout = p.Layout == "Arc" && !p.Advanced;
+        if (overlayLayout)
+        {
+            y = LayoutOverlay(y, culture);
+        }
+        else if (arcLayout)
+        {
+            y = LayoutArc(y, culture);
+        }
+        else if (poster)
         {
             y = LayoutPoster(y, culture);
         }
@@ -278,6 +288,159 @@ public sealed class ClockFace : FrameworkElement
         if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, sTimeCenter - sTimeW / 2, sTimeW, sIndicatorY);
     }
 
+    // ---- Overlay layout: big translucent condensed time, script weekday across it, condensed date line ----
+    private bool overlayLayout;
+    private string oTime = "", oDate = "";
+    private FormattedText? oWeekday;
+    private double oY, oSize, oTop, oH, oX, oW, oExtra, oCenter, oScriptX, oScriptBase, oDateSize, oDateExtra, oDateY, oIndicatorY;
+
+    private double LayoutOverlay(double y, CultureInfo culture)
+    {
+        double s = p.Scale, cond = p.Condense;
+        scriptFace = new Typeface(new FontFamily(p.ScriptFont), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        oY = y;
+        oSize = mainSize * 1.7; oExtra = -oSize * .02;
+        (oTop, oH) = Ink("8", oSize);
+        oTime = now.ToString(p.Hour24 ? "HH:mm" : "hh:mm", culture);
+        oW = StableWidth("88:88", oSize, oExtra) * cond;
+
+        double scriptSize = mainSize * .66;
+        oWeekday = p.Weekday ? Text(now.ToString("dddd", culture), scriptSize, Brushes.White, scriptFace) : null;
+        double scriptReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => Text(d, scriptSize, Brushes.White, scriptFace).WidthIncludingTrailingWhitespace) : 0;
+        oScriptBase = y + oH * .98;
+
+        oDateSize = mainSize * .34; oDateExtra = oDateSize * .04;
+        oDate = p.Date ? Case(TemplateFormatter.OrdinalDate(now, culture), culture) : "";
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => StableWidth(Case(TemplateFormatter.OrdinalDate(d, culture), culture), oDateSize, oDateExtra)) * cond : 0;
+        var (dateTop, dateH) = Ink("8", oDateSize);
+        double dateCap = (p.Weekday ? oScriptBase + scriptSize * .2 : y + oH + mainSize * .14);
+        oDateY = dateCap - dateTop;
+        double bottom = p.Date ? dateCap + dateH : (p.Weekday ? oScriptBase + scriptSize * .3 : y + oH);
+        oIndicatorY = bottom + mainSize * .16;
+
+        double width = Math.Max(oW, Math.Max(scriptReserve, dateReserve));
+        oCenter = padding + width / 2;
+        oX = oCenter - oW / 2;
+        oScriptX = oCenter - scriptReserve * .42;
+        bodyWidth = Math.Max(bodyWidth, width);
+        return p.SecondsIndicator != "None" ? oIndicatorY + 8 * s : bottom;
+    }
+
+    private void RenderOverlay(DrawingContext dc, Color text, Color accent, Brush? dim)
+    {
+        double cond = p.Condense;
+        Brush timeBrush = p.Gradient
+            ? Frozen(new LinearGradientBrush(Alpha(text, .55), Alpha(accent, .55), 0) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(oX, 0), EndPoint = new Point(oX + oW, 0) })
+            : Frozen(new SolidColorBrush(Alpha(text, .42)));
+        if (p.Fade)
+            dc.PushOpacityMask(new LinearGradientBrush(Colors.Black, Color.FromArgb(40, 0, 0, 0), 90) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, oY), EndPoint = new Point(0, oY + oH) });
+        dc.PushTransform(new ScaleTransform(cond, 1, oX, 0));
+        double actual = StableWidth(oTime, oSize, oExtra) * cond;
+        DrawStable(dc, oTime, oSize, timeBrush, oX + (oW - actual) / 2 / cond, oY - oTop, dim, oExtra);
+        dc.Pop();
+        if (p.Fade) dc.Pop();
+        if (oWeekday != null)
+        {
+            oWeekday.SetForegroundBrush(Frozen(new SolidColorBrush(accent)));
+            double x = oCenter - oWeekday.WidthIncludingTrailingWhitespace / 2;
+            dc.PushTransform(new RotateTransform(-7, oCenter, oScriptBase));
+            dc.DrawText(oWeekday, new Point(x, oScriptBase - oWeekday.Baseline));
+            dc.Pop();
+        }
+        if (oDate.Length > 0)
+        {
+            double w = StableWidth(oDate, oDateSize, oDateExtra) * cond, x = oCenter - w / 2;
+            dc.PushTransform(new ScaleTransform(cond, 1, x, 0));
+            DrawStable(dc, oDate, oDateSize, Frozen(new SolidColorBrush(Alpha(text, .82))), x, oDateY, extra: oDateExtra);
+            dc.Pop();
+        }
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, oX, oW, oIndicatorY);
+    }
+
+    // ---- Arc layout: hours stacked over minutes, a glowing arc across the minutes, a small date ----
+    private bool arcLayout;
+    private string aHour = "", aMinute = "", aDate = "";
+    private double aSize, aTop, aH, aX, aW, aHourY, aMinY, aCx, aCy, aRx, aRy, aDateSize, aDateY;
+    private const double ArcSpan = 2.45; // radians of ellipse drawn, centred on the top
+
+    private double LayoutArc(double y, CultureInfo culture)
+    {
+        aSize = mainSize * 1.9;
+        (aTop, aH) = Ink("8", aSize);
+        aHour = now.ToString(p.Hour24 ? "HH" : "hh", culture);
+        aMinute = now.ToString("mm", culture);
+        aW = StableWidth("88", aSize);
+        double gap = mainSize * .32;
+        aHourY = y; aMinY = y + aH + gap;
+
+        aRx = aW * .66; aRy = aH * .62;
+        double apex = aMinY + aH * .66;
+        aCy = apex + aRy;
+        double endY = aCy - aRy * Math.Cos(ArcSpan / 2);
+        double arcHalf = aRx * Math.Sin(ArcSpan / 2);
+
+        aDateSize = mainSize * .25;
+        aDate = p.Date ? (p.Weekday ? now.ToString("d ddd MMM", culture) : now.ToString("d MMM", culture)) : "";
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).SelectMany(m => Enumerable.Range(22, 7).Select(d => new DateTime(2026, m, d)))
+            .Max(d => StableWidth(p.Weekday ? d.ToString("d ddd MMM", culture) : d.ToString("d MMM", culture), aDateSize)) : 0;
+        var (dateTop, dateH) = Ink("8", aDateSize);
+        double dateCap = apex + mainSize * .2;
+        aDateY = dateCap - dateTop;
+
+        double halo = 8 * p.Scale;
+        double width = Math.Max(aW, Math.Max(arcHalf * 2 + halo * 2, dateReserve));
+        aCx = padding + width / 2;
+        aX = aCx - aW / 2;
+        bodyWidth = Math.Max(bodyWidth, width);
+        return Math.Max(Math.Max(aMinY + aH, endY + halo), p.Date ? dateCap + dateH : 0);
+    }
+
+    private Point ArcPoint(double t)
+    {
+        // t in [0,1] runs left to right along the top of the ellipse.
+        double a = -ArcSpan / 2 + ArcSpan * t;
+        return new Point(aCx + aRx * Math.Sin(a), aCy - aRy * Math.Cos(a));
+    }
+
+    private Geometry ArcGeometry(double from, double to)
+    {
+        var g = new StreamGeometry();
+        using (var c = g.Open())
+        {
+            int steps = Math.Max(2, (int)(64 * (to - from)));
+            c.BeginFigure(ArcPoint(from), false, false);
+            c.PolyLineTo(Enumerable.Range(1, steps).Select(i => ArcPoint(from + (to - from) * i / steps)).ToList(), true, true);
+        }
+        g.Freeze();
+        return g;
+    }
+
+    private void RenderArc(DrawingContext dc, Color text, Color accent, Brush inkBrush, Brush? dim)
+    {
+        double s = p.Scale;
+        DrawStable(dc, aHour, aSize, inkBrush, aCx - StableWidth(aHour, aSize) / 2, aHourY - aTop);
+        if (p.Fade)
+            dc.PushOpacityMask(new LinearGradientBrush(new GradientStopCollection { new(Colors.Black, 0), new(Color.FromArgb(170, 0, 0, 0), .5), new(Color.FromArgb(12, 0, 0, 0), 1) }, 90)
+            { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(0, aMinY), EndPoint = new Point(0, aMinY + aH) });
+        DrawStable(dc, aMinute, aSize, inkBrush, aCx - StableWidth(aMinute, aSize) / 2, aMinY - aTop);
+        if (p.Fade) dc.Pop();
+
+        // The arc: bright at the left, tapering to the right, with a soft drawn halo.
+        double progress = p.SecondsIndicator == "None" ? 1 : (now.Second + 1) / 60.0;
+        var sweep = new LinearGradientBrush(new GradientStopCollection { new(accent, 0), new(accent, .55), new(Alpha(accent, .15), 1) }, 0)
+        { MappingMode = BrushMappingMode.Absolute, StartPoint = ArcPoint(0), EndPoint = ArcPoint(1) };
+        if (p.SecondsIndicator != "None")
+            dc.DrawGeometry(null, new Pen(new SolidColorBrush(Alpha(accent, .16)), 3 * s) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, ArcGeometry(0, 1));
+        var lit = ArcGeometry(0, progress);
+        foreach (var (width, alpha) in new[] { (16.0, .07), (9.0, .14), (4.0, 1.0) })
+        {
+            Brush b = alpha >= 1 ? sweep : new SolidColorBrush(Alpha(accent, alpha));
+            dc.DrawGeometry(null, new Pen(b, width * s) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }, lit);
+        }
+        if (aDate.Length > 0)
+            DrawStable(dc, aDate, aDateSize, Frozen(new SolidColorBrush(accent)), aCx - StableWidth(aDate, aDateSize) / 2, aDateY);
+    }
+
     private double LayoutPoster(double y, CultureInfo culture)
     {
         double s = p.Scale;
@@ -412,6 +575,8 @@ public sealed class ClockFace : FrameworkElement
             if (indicatorY >= 0) DrawIndicator(dc, accent, padding, bodyWidth, indicatorY);
             if (poster) RenderPoster(dc, text, accent, inkBrush, dim);
             if (scriptLayout) RenderScript(dc, text, accent, inkBrush);
+            if (overlayLayout) RenderOverlay(dc, text, accent, dim);
+            if (arcLayout) RenderArc(dc, text, accent, inkBrush, dim);
         }
         ink.Effect = p.Glow ? new DropShadowEffect { Color = accent, ShadowDepth = 0, BlurRadius = GlowRadius(), Opacity = .45 + .55 * p.GlowStrength, RenderingBias = RenderingBias.Quality } : null;
 

@@ -1,3 +1,9 @@
+## Version 2.3.0 Windows validation
+
+- Windows 11 Release build succeeded. All 32 core regression tests passed, including the new Overlay/Arc preset and ordinal-date tests.
+- `Still.exe --verify` exported actual WPF renders of all twelve presets and Settings. The Midnight and Arc renders were visually inspected and are in `docs/images`.
+- Not exercised: drag, the scale grip, and the tray menu with the new layouts, and the installer build.
+
 ## Version 2.2.0 Windows validation
 
 - Windows 11 Release build succeeded. All 30 core regression tests passed, including the new Script layout test.

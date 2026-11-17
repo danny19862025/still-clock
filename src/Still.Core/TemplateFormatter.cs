@@ -85,6 +85,16 @@ public static class TemplateFormatter
         return text;
     }
 
+    /// <summary>"27th February 2026" in English (ordinal day); "d MMMM yyyy" in other languages.</summary>
+    public static string OrdinalDate(DateTime time, CultureInfo? culture = null)
+    {
+        culture ??= CultureInfo.CurrentCulture;
+        if (culture.TwoLetterISOLanguageName != "en") return time.ToString("d MMMM yyyy", culture);
+        int d = time.Day;
+        string suffix = d % 100 is 11 or 12 or 13 ? "th" : (d % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" };
+        return d.ToString(culture) + suffix + time.ToString(" MMMM yyyy", culture);
+    }
+
     /// <summary>A compact UTC offset tag such as "UTC+11:00".</summary>
     public static string ZoneTag(DateTime time)
     {

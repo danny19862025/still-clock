@@ -1,10 +1,10 @@
-Still 2.1.0 adds a Poster layout inspired by editorial date widgets.
+Still 2.2.0 adds a Script layout with a handwritten weekday.
 
-- New Poster layout: a huge day number that fades towards its base, the bold month across it, the time with a fine underline beneath, and the weekday running up the side.
-- Two new presets: Poster (lavender and white) and Neon Poster (hot magenta with glow and a seconds bar).
-- Settings > Style has a new Layout choice (Classic or Poster) and a toggle for the day-number fade. Fonts, colours, palettes, glow, gradient, frames, surfaces and seconds indicators all work with Poster.
+- New Script layout: a tall, narrow day number, the month running up its side, a handwritten weekday sweeping across the number, and a bold time beneath.
+- New Signature preset: white number and time with a blue script weekday.
+- Settings > Style can now choose the handwriting font (Segoe Script, Ink Free, Segoe Print, Gabriola or any installed font) and adjust how narrow the day number is. The day-number fade, colours, palettes, glow, gradient, frames, surfaces and seconds indicators also work with Script.
 
-Existing preferences are kept and stay on the Classic layout until you choose Poster.
+Existing preferences are kept and stay on their current layout until you choose another.
 
 Install: download Still-Setup-win-x64.exe, exit the old Still from its notification-area icon, and run Setup. The installer installs for your Windows user without administrator access and includes .NET. A portable Still-win-x64.zip is also available.
 

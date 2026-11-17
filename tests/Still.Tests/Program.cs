@@ -142,6 +142,14 @@ Test("poster layout: presets, normalization and older files", () =>
     var legacy = System.Text.Json.JsonSerializer.Deserialize<Preferences>("{\"Preset\":\"Glass\"}")!; legacy.Normalize();
     Equal("Classic", legacy.Layout);
 });
+Test("script layout: preset, clamped width and safe font fallback", () =>
+{
+    var sig = new Preferences(); sig.ApplyPreset("Signature");
+    Equal("Script", sig.Layout); Equal("Segoe Script", sig.ScriptFont); True(!sig.Fade);
+    var bad = new Preferences { Layout = "Script", Condense = 9, ScriptFont = "" }; bad.Normalize();
+    Equal(1d, bad.Condense); Equal("Segoe Script", bad.ScriptFont);
+    bad.Condense = double.NaN; bad.Normalize(); Equal(.6, bad.Condense);
+});
 Test("poster compact time follows 12/24-hour, seconds and AM/PM", () =>
 {
     var evening = new DateTime(2026, 11, 17, 20, 30, 5);

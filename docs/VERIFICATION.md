@@ -1,3 +1,9 @@
+## Version 2.2.0 Windows validation
+
+- Windows 11 Release build succeeded. All 30 core regression tests passed, including the new Script layout test.
+- `Still.exe --verify` exported actual WPF renders of all ten presets and Settings. The Signature render was visually inspected and is in `docs/images`.
+- Not exercised: drag, the scale grip, and the tray menu with the Script layout, and the installer build.
+
 ## Version 2.1.0 Windows validation
 
 - Windows 11 Release build succeeded. All 29 core regression tests passed, including the new layout and compact-time tests.

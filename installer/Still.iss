@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "2.4.0"
+  #define AppVersion "2.5.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\artifacts\Still-win-x64"
@@ -49,8 +49,15 @@ Name: "{autodesktop}\Still"; Filename: "{app}\Still.exe"; Parameters: "--setting
 
 [Run]
 Filename: "{app}\Still.exe"; Parameters: "--settings"; Description: "Launch Still"; Flags: nowait postinstall skipifsilent
+; In-app updates run Setup silently with /RELAUNCH=1, so reopen the clock afterwards.
+Filename: "{app}\Still.exe"; WorkingDir: "{app}"; Flags: nowait; Check: ShouldRelaunch
 
 [Code]
+function ShouldRelaunch: Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Command: String;

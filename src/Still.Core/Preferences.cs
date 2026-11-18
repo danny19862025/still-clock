@@ -75,6 +75,9 @@ public sealed class Preferences
     public bool Advanced { get; set; }
     public string Template { get; set; } = "{time}\n{weekday} · {date}";
     public SavedPosition? Position { get; set; }
+    /// <summary>Settings and About window colours: Dark, Light or System. Kept on this computer; never part of a shared theme.</summary>
+    public string UiTheme { get; set; } = "Dark";
+    public static readonly string[] UiThemes = ["Dark", "Light", "System"];
 
     // Optional calendar shown with the clock. Off by default; presets leave it as it is.
     public bool ShowCalendar { get; set; }
@@ -198,6 +201,7 @@ public sealed class Preferences
         if (Caption.Length > 40) Caption = Caption[..40];
         if (TemplateFormatter.Validate(Template) != null) Template = "{time}\n{weekday} · {date}";
         if (Position is { } p && (!double.IsFinite(p.OffsetX) || !double.IsFinite(p.OffsetY))) Position = null;
+        if (!UiThemes.Contains(UiTheme)) UiTheme = "Dark";
         if (!Locked) ClickThrough = false;
     }
 
@@ -223,7 +227,7 @@ public sealed class Preferences
         if (theme == null) return "That theme could not be read.";
         // Desktop behaviour and placement always stay with this computer.
         theme.Position = Position; theme.Locked = Locked; theme.ClickThrough = ClickThrough;
-        theme.Topmost = Topmost; theme.LaunchAtLogin = LaunchAtLogin;
+        theme.Topmost = Topmost; theme.LaunchAtLogin = LaunchAtLogin; theme.UiTheme = UiTheme;
         theme.Normalize();
         foreach (var property in typeof(Preferences).GetProperties())
             if (property.CanWrite) property.SetValue(this, property.GetValue(theme));

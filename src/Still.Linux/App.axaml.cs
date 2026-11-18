@@ -45,6 +45,9 @@ public partial class ClockApplication : Application
         if (Program.Verify) Preferences.ApplyPreset("Neon");
         // Read the autostart entry rather than trusting a stale JSON preference.
         Preferences.LaunchAtLogin = LinuxDesktop.LoginEnabled();
+        Ui.Apply(this, args.Contains("--light") ? "Light" : Preferences.UiTheme);
+        if (PlatformSettings != null)
+            PlatformSettings.ColorValuesChanged += (_, _) => Dispatcher.UIThread.Post(() => { if (Preferences.UiTheme == "System") ApplyUiTheme(); });
         tick = new DispatcherTimer(DispatcherPriority.Background);
         tick.Tick += (_, _) => RefreshTime();
         save = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
@@ -122,10 +125,40 @@ public partial class ClockApplication : Application
     }
     public void Reset()
     {
-        var position = Preferences.Position;
+        var position = Preferences.Position; var uiTheme = Preferences.UiTheme;
         SetLogin(false);
-        Preferences = Preferences.CreateDefault(); Preferences.Position = position; Preferences.LaunchAtLogin = LinuxDesktop.LoginEnabled();
+        Preferences = Preferences.CreateDefault(); Preferences.Position = position; Preferences.LaunchAtLogin = LinuxDesktop.LoginEnabled(); Preferences.UiTheme = uiTheme;
         Apply(); Clock.RestorePosition();
+    }
+
+    private AboutWindow? about;
+    public void OpenAbout() => OpenAbout(false);
+    public void OpenAbout(bool checkForUpdates)
+    {
+        if (about == null)
+        {
+            about = new AboutWindow(checkForUpdates);
+            about.Closed += (_, _) => about = null;
+        }
+        about.Show(); about.Activate();
+        FrontSoon(about, true);
+    }
+
+    /// <summary>Re-reads the Dark/Light/System choice; open windows are rebuilt when the palette changes.</summary>
+    public void ApplyUiTheme(bool force = false, string? page = null)
+    {
+        bool changed = Ui.Apply(this, Preferences.UiTheme);
+        if (!changed && !force) return;
+        if (settings != null)
+        {
+            string current = page ?? settings.CurrentPage;
+            var position = settings.Position; var size = new Size(settings.Width, settings.Height);
+            settings.Close();
+            OpenSettings();
+            settings!.Position = position; settings.Width = size.Width; settings.Height = size.Height;
+            settings.Go(current);
+        }
+        if (about != null) { about.Close(); OpenAbout(); }
     }
 
     private void CreateTray()
@@ -136,6 +169,10 @@ public partial class ClockApplication : Application
         showItem = Item("Hide clock", ToggleVisibility);
         lockItem = Item("Lock position", () => { if (Preferences.Locked) Unlock(); else { Preferences.Locked = true; Apply(); settings?.SyncBehavior(); } });
         Item("Unlock and restore interaction", Unlock);
+        menu.Items.Add(new NativeMenuItemSeparator());
+        Item("About Still…", () => OpenAbout(false));
+        Item("Check for updates…", () => OpenAbout(true));
+        Item("Buy Me a Coffee…", () => AboutWindow.Open(Links.Coffee));
         menu.Items.Add(new NativeMenuItemSeparator());
         Item("Exit Still", ExitApp);
         tray = new TrayIcon { Icon = AppIcon, ToolTipText = "Still • futuristic desktop clock", Menu = menu, IsVisible = true };
@@ -206,6 +243,9 @@ public partial class ClockApplication : Application
         OpenSettings();
         await System.Threading.Tasks.Task.Delay(1500);
         if (settings != null) SaveVisual(settings, Path.Combine(dir, "settings.png"));
+        OpenAbout();
+        await System.Threading.Tasks.Task.Delay(800);
+        if (about != null) SaveVisual(about, Path.Combine(dir, "about.png"));
         Console.WriteLine("Screenshots saved to " + dir);
         if (Program.Verify) ExitApp();
     }

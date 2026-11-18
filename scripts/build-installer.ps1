@@ -1,6 +1,6 @@
 param(
     [string]$Compiler = '',
-    [string]$Version = '2.3.0',
+    [string]$Version = '2.5.0',
     [string]$PackageDir = '',
     [string]$OutputDir = ''
 )

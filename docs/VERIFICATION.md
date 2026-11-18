@@ -1,3 +1,10 @@
+## Version 2.5.0 validation
+
+- Windows 11: Release builds of the Windows app and the Linux (Avalonia) app succeeded. All 40 core regression tests passed, including UI theme, version comparison, release parsing and checksum lookup.
+- The update checker was run against the live v2.4.0 GitHub release. It found the installer and checksum file, and read the same installer hash that was verified by hand earlier.
+- `Still.exe --verify` renders of Settings and About in dark and light mode were visually inspected.
+- Not exercised: the full in-app download-and-install hand-off (it needs a release newer than the running copy), and the Linux About window and light mode at runtime (no Linux session or WSL here). The Linux CI job builds and tests the Linux app.
+
 ## Version 2.3.0 Linux validation
 
 Build host: Arch Linux x64, KDE Plasma 6 on Wayland (Still runs through XWayland), one

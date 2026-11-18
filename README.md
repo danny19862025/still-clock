@@ -5,7 +5,11 @@ A futuristic, deeply customizable desktop clock for Windows 11 and Linux.
 Still is an actual borderless desktop widget with a separate settings window
 and notification-area (system tray) menu. C# / .NET 10 LTS: WPF on Windows,
 Avalonia on Linux, sharing one core. No web view, server, account, telemetry,
-network calls, plugins, or administrator/root privileges.
+background network use, plugins, or administrator/root privileges. Still only
+contacts GitHub when you press **Check for updates**.
+
+Made by Danny Rudd. If Still brightens your desktop, you can
+[buy me a coffee](https://buymeacoffee.com/danny1986) ☕
 
 | Poster | Signature |
 | --- | --- |
@@ -82,12 +86,37 @@ Linux notes:
 
 Settings has five pages (**Ctrl+1–5**):
 
-- **01 Theme:** a live gallery of all thirteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
+- **Top bar:** **About** (or **F1**) and a ☕ **Buy Me a Coffee** button sit beside the live time.
+- **01 Theme:** **Settings appearance** (Dark, Light or Match Windows/system), a live gallery of all thirteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
 - **02 Style:** layout (Classic, Poster, Script, Overlay, Arc or Split), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Calendar:** an optional calendar with the clock. Pick a mode from live previews: **Month** (the whole month), **Week** (this week) or **Strip** (every day of the month in one row). Place it below or to the right of the clock, choose the first day of the week, and show week numbers, dimmed weekends and days from neighbouring months. Today is marked in the accent colour. Off by default; it stays when you switch presets.
 - **05 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
-- **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
+- **Notification-area clock icon:** settings, show/hide, unlock, About, Check for updates, Buy Me a Coffee and exit. Windows may put the icon under the up arrow.
+
+### About and updates
+
+| Dark | Light |
+| --- | --- |
+| ![About Still in dark mode](docs/images/about-dark.png) | ![About Still in light mode](docs/images/about-light.png) |
+
+**About Still** shows the version, who made it, and links to the
+[GitHub repository](https://github.com/danny19862025/still-clock), the issue
+tracker and [Buy Me a Coffee](https://buymeacoffee.com/danny1986).
+
+**Check for updates** asks GitHub for the latest stable release. Nothing is
+checked automatically. When a newer version exists:
+
+- **Windows (installed with Setup):** **Download and install** fetches
+  `Still-Setup-win-x64.exe`, checks its SHA-256 against the release's
+  `SHA256SUMS.txt`, and refuses it if they differ. Setup then updates Still in
+  place and reopens it, keeping your settings.
+- **Windows portable copy and Linux:** the button opens the release page to
+  download the ZIP or `Still-linux-x64.tar.gz`.
+
+The settings window's **Dark / Light / Match system** choice stays on your
+computer and is never included in a copied theme. The live preview and preset
+cards stay dark in every mode, because they stand in for your wallpaper.
 
 ### Thirteen starting points
 

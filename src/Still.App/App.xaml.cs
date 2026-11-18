@@ -33,6 +33,7 @@ public partial class ClockApplication : Application
         if (!Fonts.SystemFontFamilies.Any(f => f.Source == Preferences.Font)) Preferences.Font = "Segoe UI";
         // Read our per-user Run entry rather than trusting a stale JSON preference.
         Preferences.LaunchAtLogin = LoginEnabled();
+        Ui.Apply(Resources, e.Args.Contains("--light") ? "Light" : Preferences.UiTheme);
         tick = new DispatcherTimer(DispatcherPriority.Background);
         tick.Tick += (_, _) => RefreshTime();
         save = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
@@ -77,6 +78,58 @@ public partial class ClockApplication : Application
         }
         settings.Show(); settings.WindowState = WindowState.Normal; settings.Activate(); RefreshTime();
     }
+
+    private AboutWindow? about;
+    public void OpenAbout() => OpenAbout(false);
+    public void OpenAbout(bool checkForUpdates)
+    {
+        if (about == null)
+        {
+            about = new AboutWindow(this, checkForUpdates);
+            about.Closed += (_, _) => about = null;
+            if (settings?.IsVisible == true) about.Owner = settings;
+        }
+        about.Show(); about.Activate();
+    }
+
+    /// <summary>Re-reads the Dark/Light/System choice; open windows are rebuilt when the palette changes.</summary>
+    public void ApplyUiTheme(bool force = false, string? page = null)
+    {
+        bool changed = Ui.Apply(Resources, Preferences.UiTheme);
+        if (!changed && !force) return;
+        if (settings != null)
+        {
+            string current = page ?? settings.CurrentPage;
+            var bounds = new Rect(settings.Left, settings.Top, settings.Width, settings.Height);
+            var state = settings.WindowState;
+            settings.Close();
+            OpenSettings();
+            settings!.Left = bounds.Left; settings.Top = bounds.Top; settings.Width = bounds.Width; settings.Height = bounds.Height; settings.WindowState = state;
+            settings.Go(current);
+        }
+        if (about != null) { about.Close(); OpenAbout(); }
+    }
+
+    /// <summary>True when running from the per-user Setup install, which the in-app updater can replace.</summary>
+    public static bool IsInstalledCopy
+    {
+        get
+        {
+            string installed = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Still");
+            return Path.GetDirectoryName(Environment.ProcessPath)?.TrimEnd('\\').Equals(installed, StringComparison.OrdinalIgnoreCase) == true;
+        }
+    }
+
+    /// <summary>Hands over to a checksum-verified installer: Setup replaces the files, then reopens Still.</summary>
+    public void InstallUpdate(string installerPath)
+    {
+        Clock.CapturePosition(); Store.Save(Preferences);
+        // Free the single-instance mutex first so Setup does not wait for this process.
+        try { instance?.ReleaseMutex(); } catch (ApplicationException) { }
+        instance?.Dispose(); instance = null;
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(installerPath, "/SILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER /RELAUNCH=1") { UseShellExecute = true });
+        ExitApp();
+    }
     public void Unlock()
     {
         Preferences.ClickThrough = false; Preferences.Locked = false;
@@ -91,9 +144,9 @@ public partial class ClockApplication : Application
     }
     public void Reset()
     {
-        var position = Preferences.Position;
+        var position = Preferences.Position; var uiTheme = Preferences.UiTheme;
         SetLogin(false);
-        Preferences = Preferences.CreateDefault(); Preferences.Position = position; Preferences.LaunchAtLogin = LoginEnabled();
+        Preferences = Preferences.CreateDefault(); Preferences.Position = position; Preferences.LaunchAtLogin = LoginEnabled(); Preferences.UiTheme = uiTheme;
         Apply(); Clock.RestorePosition();
     }
 
@@ -110,6 +163,10 @@ public partial class ClockApplication : Application
             if (Preferences.Locked) Unlock(); else { Preferences.Locked = true; Apply(); settings?.SyncBehavior(); }
         }));
         menu.Items.Add("Unlock and restore interaction", null, (_, _) => Dispatcher.Invoke(Unlock));
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add("About Still…", null, (_, _) => Dispatcher.Invoke(() => OpenAbout(false)));
+        menu.Items.Add("Check for updates…", null, (_, _) => Dispatcher.Invoke(() => OpenAbout(true)));
+        menu.Items.Add("Buy Me a Coffee…", null, (_, _) => Dispatcher.Invoke(() => AboutWindow.Open(Links.Coffee)));
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Exit Still", null, (_, _) => Dispatcher.Invoke(ExitApp));
         menu.Opening += (_, _) => { show.Text = Clock.IsVisible && Clock.WindowState != WindowState.Minimized ? "Hide clock" : "Show clock"; locked.Text = Preferences.Locked ? "Unlock position" : "Lock position"; };
@@ -171,6 +228,8 @@ public partial class ClockApplication : Application
         }
         OpenSettings(); settings!.UpdateLayout();
         SaveVisual(settings.Content as FrameworkElement ?? settings, Path.Combine(dir, "settings.png"));
+        OpenAbout(); about!.UpdateLayout();
+        SaveVisual(about.Content as FrameworkElement ?? about, Path.Combine(dir, "about.png"));
         if (Environment.GetCommandLineArgs().Contains("--verify")) { ExitApp(); return; }
         System.Windows.MessageBox.Show("Screenshots saved to " + dir, "Still");
     }

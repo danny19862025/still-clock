@@ -52,6 +52,7 @@ public sealed class ClockWindow : Window
         Item("_Unlock and restore interaction", app.Unlock);
         Item("_Lock position", () => { app.Preferences.Locked = true; app.Apply(); });
         Item("_Hide clock", app.ToggleVisibility);
+        Item("_About Still…", app.OpenAbout);
         Item("E_xit Still", app.ExitApp);
         ContextMenu = context;
         Closing += (_, e) =>
@@ -96,6 +97,8 @@ public sealed class ClockWindow : Window
     {
         if ((uint)message == NativeDesktop.TaskbarCreated) app.RestoreTray();
         if (message is 0x001E or 0x0218 or 0x001A) { TimeZoneInfo.ClearCachedData(); app.RefreshTime(); } // time, power, settings/timezone.
+        // Windows' light/dark switch arrives as WM_SETTINGCHANGE.
+        if (message == 0x001A && app.Preferences.UiTheme == "System") Dispatcher.BeginInvoke(() => app.ApplyUiTheme(), DispatcherPriority.ContextIdle);
         if (message == 0x007E) Dispatcher.BeginInvoke(() => RestorePosition(), DispatcherPriority.ContextIdle);
         if (message == 0x02E0) Dispatcher.BeginInvoke(() => { Face.Update(app.Preferences, DateTime.Now); app.RefreshTime(); }, DispatcherPriority.ContextIdle);
         return IntPtr.Zero;

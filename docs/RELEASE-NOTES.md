@@ -1,13 +1,13 @@
-Still 2.4.0 comes to Linux and adds a calendar, a new Split preset and typed hex colours.
+Still 2.5.0 adds an About window, update checks, Buy Me a Coffee, and light and dark settings.
 
-- **Linux:** a native Linux version with every preset, layout, effect and setting from Windows. Download Still-linux-x64.tar.gz, extract it and run ./install.sh. It installs for your user without root, adds Still to your app menu, starts at login, and shows the clock on every virtual desktop. Themes copied on Windows paste on Linux and back.
-- **Calendar:** an optional calendar with the clock, set up on the new Calendar tab (Ctrl+4). Choose Month, Week or Strip from live previews, place it below or to the right, and pick the first day of the week, week numbers, dimmed weekends and days from neighbouring months. Today is marked in the accent colour. Advanced moves to Ctrl+5.
-- **Split preset and layout:** a flat translucent panel with a bold hot-pink hour, a dim colon, minutes with small raised seconds and a compact 2026-NOV-18 date.
-- **Hex colours:** type or paste a code such as #FF2BD6, FF2BD6 or #F2D beside every colour picker.
+- **About Still:** open it with the new **About** button at the top of Settings, press F1, or use the tray menu. It shows the version, who made it, and links to the GitHub repository, the issue tracker and Buy Me a Coffee.
+- **Buy Me a Coffee:** a coffee-cup button sits at the top of Settings, and there's a yellow Buy Me a Coffee button in About.
+- **Check for updates:** asks GitHub for the latest stable release, only when you press the button. On Windows installs made with Setup, **Download and install** fetches the new installer, verifies its SHA-256 against the published checksums, updates Still in place and reopens it. Portable copies and Linux open the release page instead.
+- **Light and dark mode:** Settings > Theme > Settings appearance switches Settings and About between Dark, Light and Match Windows/system. The live preview and preset cards stay dark so clocks look as they will on your wallpaper. The choice stays on your computer and is not part of copied themes.
 
-Existing preferences are kept. The calendar is off until you turn it on.
+Existing preferences are kept, and Settings stays dark until you choose otherwise.
 
-Windows: download Still-Setup-win-x64.exe, exit the old Still from its notification-area icon, and run Setup. It installs for your Windows user without administrator access and includes .NET. A portable Still-win-x64.zip is also available.
+Windows: download Still-Setup-win-x64.exe, exit the old Still from its notification-area icon, and run Setup. It installs for your Windows user without administrator access and includes .NET. A portable Still-win-x64.zip is also available. From this version on, you can update from inside Still.
 
 Linux: download Still-linux-x64.tar.gz, then run: tar -xzf Still-linux-x64.tar.gz && cd Still-linux-x64 && ./install.sh
 

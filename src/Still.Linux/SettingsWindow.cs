@@ -25,10 +25,11 @@ public sealed class SettingsWindow : Window
     private bool syncing;
     private Preferences P => app.Preferences;
 
-    private static readonly IBrush Muted = new ImmutableSolidColorBrush(Color.FromRgb(127, 155, 176));
-    private static readonly IBrush Accent = new ImmutableSolidColorBrush(Color.FromRgb(0, 229, 255));
-    private static readonly IBrush Magenta = new ImmutableSolidColorBrush(Color.FromRgb(255, 43, 214));
-    private static readonly IBrush Line = new ImmutableSolidColorBrush(Color.FromRgb(22, 40, 56));
+    // Chrome colours follow the Dark/Light/System choice; the window is rebuilt when it changes.
+    private static IBrush Muted => Ui.Muted;
+    private static IBrush Accent => Ui.Accent;
+    private static IBrush Magenta => Ui.Warning;
+    private static IBrush Line => Ui.Line;
     private static readonly FontFamily Mono = LinuxDesktop.MonoFamily;
 
     /// <summary>A faint blueprint grid behind the preview.</summary>
@@ -60,23 +61,33 @@ public sealed class SettingsWindow : Window
         MinWidth = Math.Min(640, work.Width / dip - 32);
         MinHeight = Math.Min(520, work.Height / dip - 48);
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        Background = new ImmutableSolidColorBrush(Color.FromRgb(5, 8, 15));
+        Background = Ui.Window;
 
         var root = new Grid { RowDefinitions = new RowDefinitions("56,*,Auto") };
         Content = root;
 
         // ---- Header ----
-        var titlebar = new Border { Background = new ImmutableSolidColorBrush(Color.FromRgb(7, 12, 22)), BorderBrush = Line, BorderThickness = new Thickness(0, 0, 0, 1) };
+        var titlebar = new Border { Background = Ui.Titlebar, BorderBrush = Line, BorderThickness = new Thickness(0, 0, 0, 1) };
         root.Children.Add(titlebar);
         var titleGrid = new Grid(); titlebar.Child = titleGrid;
         var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(26, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        brand.Children.Add(new Border { Width = 10, Height = 10, Background = Accent, Margin = new Thickness(0, 0, 14, 0), RenderTransform = new RotateTransform(45), Effect = new DropShadowEffect { Color = Color.FromRgb(0, 229, 255), OffsetX = 0, OffsetY = 0, BlurRadius = 12 }, VerticalAlignment = VerticalAlignment.Center });
+        brand.Children.Add(new Border { Width = 10, Height = 10, Background = Accent, Margin = new Thickness(0, 0, 14, 0), RenderTransform = new RotateTransform(45), Effect = new DropShadowEffect { Color = Ui.AccentColor, OffsetX = 0, OffsetY = 0, BlurRadius = 12 }, VerticalAlignment = VerticalAlignment.Center });
         brand.Children.Add(new TextBlock { Text = "STILL", FontSize = 19, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center });
         brand.Children.Add(new TextBlock { Text = "  //  CHRONO INTERFACE", FontFamily = Mono, FontSize = 12, Foreground = Muted, VerticalAlignment = VerticalAlignment.Center });
         titleGrid.Children.Add(brand);
+        // About and Buy Me a Coffee sit at the top, beside the live time.
+        var chrome = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Spacing = 8, Margin = new Thickness(0, 0, 26, 0) };
+        var about = new Button { Content = "_About", Padding = new Thickness(14, 5), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(about, "About Still, updates and support (F1)");
+        AutomationProperties.SetName(about, "About Still");
+        about.Click += (_, _) => app.OpenAbout();
+        var coffee = new Button { Content = AboutWindow.CoffeeIcon(20), Padding = new Thickness(7, 4), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+        ToolTip.SetTip(coffee, "Support Danny on Buy Me a Coffee");
+        AutomationProperties.SetName(coffee, "Buy Me a Coffee — support Danny");
+        coffee.Click += (_, _) => AboutWindow.Open(Links.Coffee);
         clockReadout.FontFamily = Mono; clockReadout.FontSize = 12; clockReadout.Foreground = Accent; clockReadout.VerticalAlignment = VerticalAlignment.Center;
-        clockReadout.HorizontalAlignment = HorizontalAlignment.Right; clockReadout.Margin = new Thickness(0, 0, 26, 0);
-        titleGrid.Children.Add(clockReadout);
+        chrome.Children.Add(about); chrome.Children.Add(coffee); chrome.Children.Add(clockReadout);
+        titleGrid.Children.Add(chrome);
 
         // ---- Body: preview stage + controls ----
         var body = new Grid { Margin = new Thickness(26, 22, 26, 20), ColumnDefinitions = new ColumnDefinitions("1.05*,*") }; Grid.SetRow(body, 1); root.Children.Add(body);
@@ -87,8 +98,8 @@ public sealed class SettingsWindow : Window
         previewGlow.Width = 420; previewGlow.Height = 260; previewGlow.HorizontalAlignment = HorizontalAlignment.Center; previewGlow.VerticalAlignment = VerticalAlignment.Center;
         stage.Children.Add(previewGlow);
         stage.Children.Add(new Viewbox { Child = preview, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(28), VerticalAlignment = VerticalAlignment.Center });
-        stage.Children.Add(new TextBlock { Text = "LIVE PREVIEW", FontFamily = Mono, FontSize = 10, Foreground = Accent, Margin = new Thickness(16, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
-        previewCaption.Foreground = Muted; previewCaption.FontFamily = Mono; previewCaption.FontSize = 10; previewCaption.Margin = new Thickness(16, 0, 16, 14);
+        stage.Children.Add(new TextBlock { Text = "LIVE PREVIEW", FontFamily = Mono, FontSize = 10, Foreground = Ui.StageAccent, Margin = new Thickness(16, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
+        previewCaption.Foreground = Ui.StageMuted; previewCaption.FontFamily = Mono; previewCaption.FontSize = 10; previewCaption.Margin = new Thickness(16, 0, 16, 14);
         previewCaption.VerticalAlignment = VerticalAlignment.Bottom; previewCaption.HorizontalAlignment = HorizontalAlignment.Left; previewCaption.TextTrimming = TextTrimming.CharacterEllipsis;
         stage.Children.Add(previewCaption);
 
@@ -124,6 +135,7 @@ public sealed class SettingsWindow : Window
         KeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) { Close(); e.Handled = true; }
+            if (e.Key == Key.F1) { app.OpenAbout(); e.Handled = true; }
             if (e.KeyModifiers == KeyModifiers.Control && e.Key >= Key.D1 && e.Key < Key.D1 + Pages.Length)
             { ShowPage(Pages[e.Key - Key.D1]); e.Handled = true; }
         };
@@ -159,7 +171,7 @@ public sealed class SettingsWindow : Window
         page = name; panel.Children.Clear(); locked = clickThrough = topmost = null; scale = null;
         foreach (var (key, button) in navigation)
         {
-            button.Background = key == name ? new ImmutableSolidColorBrush(Color.FromArgb(28, 0, 229, 255)) : Brushes.Transparent;
+            button.Background = key == name ? Ui.SelectedTint : Brushes.Transparent;
             button.Foreground = key == name ? Accent : Muted;
             button.BorderBrush = key == name ? Accent : Line;
         }
@@ -185,7 +197,7 @@ public sealed class SettingsWindow : Window
         var rule = new Border
         {
             Height = 1, VerticalAlignment = VerticalAlignment.Center,
-            Background = new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative), GradientStops = { new GradientStop(Color.FromArgb(90, 0, 229, 255), 0), new GradientStop(Colors.Transparent, 1) } }
+            Background = new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative), GradientStops = { new GradientStop(Color.FromArgb(90, Ui.AccentColor.R, Ui.AccentColor.G, Ui.AccentColor.B), 0), new GradientStop(Colors.Transparent, 1) } }
         };
         Grid.SetColumn(rule, 1); header.Children.Add(rule);
         panel.Children.Add(header);
@@ -269,6 +281,24 @@ public sealed class SettingsWindow : Window
     // ---- Pages ----
     private void ThemePage()
     {
+        Section("Settings appearance", "Colours for this window and About. The clock itself keeps its own look.");
+        var modes = new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, 0, 4) };
+        foreach (var (mode, label) in new[] { ("Dark", "Dark"), ("Light", "Light"), ("System", "Match system") })
+        {
+            bool active = P.UiTheme == mode;
+            var button = new Button { Content = label, Margin = new Thickness(0, 0, 8, 0), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, BorderBrush = active ? Accent : Line, BorderThickness = new Thickness(active ? 1.5 : 1) };
+            if (active) { button.Background = Ui.SelectedTint; button.Foreground = Accent; }
+            AutomationProperties.SetName(button, label + " settings appearance");
+            button.Click += (_, _) =>
+            {
+                if (P.UiTheme == mode) return;
+                P.UiTheme = mode; app.Apply();
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => app.ApplyUiTheme(force: true, page: page));
+            };
+            modes.Children.Add(button);
+        }
+        panel.Children.Add(modes);
+
         Section("Presets", "Each preset is a starting point. Change anything afterwards on the Style and Effects pages.");
         var gallery = new UniformGrid { Columns = 2 };
         var sample = DateTime.Now;
@@ -279,7 +309,7 @@ public sealed class SettingsWindow : Window
             bool active = P.Preset == name;
             var card = new Grid { RowDefinitions = new RowDefinitions("86,Auto") };
             card.Children.Add(new Viewbox { Child = face, Stretch = Stretch.Uniform, Margin = new Thickness(6, 8, 6, 4) });
-            var title = new TextBlock { Text = name == "Typography" ? "TYPE" : name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Accent : Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 2) };
+            var title = new TextBlock { Text = name == "Typography" ? "TYPE" : name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Ui.StageAccent : Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 2) };
             Grid.SetRow(title, 1); card.Children.Add(title);
             var button = new Button
             {
@@ -301,7 +331,7 @@ public sealed class SettingsWindow : Window
             var chips = new StackPanel { Orientation = Orientation.Horizontal };
             foreach (var hex in new[] { text, accent })
                 chips.Children.Add(new Border { Width = 14, Height = 14, CornerRadius = new CornerRadius(7), Margin = new Thickness(0, 0, 4, 0), Background = new ImmutableSolidColorBrush(Color.Parse(hex)), VerticalAlignment = VerticalAlignment.Center });
-            chips.Children.Add(new TextBlock { Text = " " + name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Foreground = active ? Accent : Brushes.White });
+            chips.Children.Add(new TextBlock { Text = " " + name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Foreground = active ? Accent : Ui.Ink });
             var button = new Button { Content = chips, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10, 7, 12, 7), BorderBrush = active ? Accent : Line };
             AutomationProperties.SetName(button, name + " palette");
             button.Click += (_, _) => { P.TextColor = text; P.AccentColor = accent; P.UseAccent = true; app.Apply(); ShowPage(page); };
@@ -396,9 +426,9 @@ public sealed class SettingsWindow : Window
             bool active = P.ShowCalendar && P.CalendarStyle == style;
             var card = new Grid { RowDefinitions = new RowDefinitions("130,Auto,Auto") };
             card.Children.Add(new Viewbox { Child = face, Stretch = Stretch.Uniform, Margin = new Thickness(4, 6, 4, 4) });
-            var title = new TextBlock { Text = style.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Accent : Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+            var title = new TextBlock { Text = style.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Ui.StageAccent : Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
             Grid.SetRow(title, 1); card.Children.Add(title);
-            var hint = new TextBlock { Text = style switch { "Week" => "This week", "Strip" => "Every day in one row", _ => "The whole month" }, FontSize = 10.5, Foreground = Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
+            var hint = new TextBlock { Text = style switch { "Week" => "This week", "Strip" => "Every day in one row", _ => "The whole month" }, FontSize = 10.5, Foreground = Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
             Grid.SetRow(hint, 2); card.Children.Add(hint);
             var button = new Button
             {
@@ -471,8 +501,14 @@ public sealed class SettingsWindow : Window
             panel.Children.Add(button);
         }
         panel.Children.Add(Copy("Position is remembered per saved display. If that display disconnects, Still moves to the primary display and stays within its working area."));
-        Section("About Still", $"Still {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · A futuristic desktop clock for Linux\nAvalonia port of the Windows app, inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). Bundled fonts are under the SIL Open Font License. See THIRD-PARTY-NOTICES.md for attribution.");
+        Section("About Still", $"Still {AboutWindow.CurrentVersion.ToString(3)} · A futuristic desktop clock for Linux by {Links.Author}\nAvalonia port of the Windows app, inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). Bundled fonts are under the SIL Open Font License. See THIRD-PARTY-NOTICES.md for attribution.");
+        var aboutButton = new Button { Content = "About, updates and support…" };
+        aboutButton.Click += (_, _) => app.OpenAbout();
+        panel.Children.Add(aboutButton);
     }
+
+    public string CurrentPage => page;
+    public void Go(string name) { if (Pages.Contains(name)) ShowPage(name); }
 
     private void Advanced()
     {

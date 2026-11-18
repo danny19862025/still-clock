@@ -23,13 +23,12 @@ public sealed class SettingsWindow : Window
     private bool syncing;
     private Preferences P => app.Preferences;
 
-    private static readonly Brush Muted = Freeze(new SolidColorBrush(Color.FromRgb(127, 155, 176)));
-    private static readonly Brush Accent = Freeze(new SolidColorBrush(Color.FromRgb(0, 229, 255)));
-    private static readonly Brush Magenta = Freeze(new SolidColorBrush(Color.FromRgb(255, 43, 214)));
-    private static readonly Brush Line = Freeze(new SolidColorBrush(Color.FromRgb(22, 40, 56)));
-    private static readonly Brush Panel = Freeze(new SolidColorBrush(Color.FromRgb(8, 15, 26)));
+    // Chrome colours follow the Dark/Light/System choice; the window is rebuilt when it changes.
+    private static Brush Muted => Ui.Muted;
+    private static Brush Accent => Ui.Accent;
+    private static Brush Magenta => Ui.Warning;
+    private static Brush Line => Ui.Line;
     private static readonly FontFamily Mono = new("Cascadia Mono, Consolas");
-    private static Brush Freeze(Brush b) { b.Freeze(); return b; }
 
     public SettingsWindow(ClockApplication application)
     {
@@ -46,24 +45,33 @@ public sealed class SettingsWindow : Window
         ResizeMode = ResizeMode.CanResizeWithGrip;
         FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
 
-        var root = new Grid { Background = new SolidColorBrush(Color.FromRgb(5, 8, 15)) };
+        var root = new Grid { Background = Ui.Window };
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(56) });
         root.RowDefinitions.Add(new RowDefinition());
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(74) });
         Content = root;
 
         // ---- Title bar ----
-        var titlebar = new Border { Background = new SolidColorBrush(Color.FromRgb(7, 12, 22)), BorderBrush = Line, BorderThickness = new Thickness(0, 0, 0, 1) };
+        var titlebar = new Border { Background = Ui.Titlebar, BorderBrush = Line, BorderThickness = new Thickness(0, 0, 0, 1) };
         root.Children.Add(titlebar);
         var titleGrid = new Grid(); titlebar.Child = titleGrid;
         var brand = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(26, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        brand.Children.Add(new Border { Width = 10, Height = 10, Background = Accent, Margin = new Thickness(0, 0, 14, 0), RenderTransform = new RotateTransform(45), RenderTransformOrigin = new Point(.5, .5), Effect = new DropShadowEffect { Color = Color.FromRgb(0, 229, 255), ShadowDepth = 0, BlurRadius = 12 } });
+        brand.Children.Add(new Border { Width = 10, Height = 10, Background = Accent, Margin = new Thickness(0, 0, 14, 0), RenderTransform = new RotateTransform(45), RenderTransformOrigin = new Point(.5, .5), Effect = new DropShadowEffect { Color = Ui.AccentColor, ShadowDepth = 0, BlurRadius = 12 } });
         brand.Children.Add(new TextBlock { Text = "STILL", FontSize = 19, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
         brand.Children.Add(new TextBlock { Text = "  //  CHRONO INTERFACE", FontFamily = Mono, FontSize = 12, Foreground = Muted, VerticalAlignment = VerticalAlignment.Center });
         titleGrid.Children.Add(brand);
         titlebar.MouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; else DragMove(); };
         var chrome = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         titleGrid.Children.Add(chrome);
+        // About and Buy Me a Coffee sit at the top, beside the window controls.
+        var about = new Button { Content = "_About", Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12.5, ToolTip = "About Still, updates and support (F1)" };
+        AutomationProperties.SetName(about, "About Still");
+        about.Click += (_, _) => app.OpenAbout();
+        chrome.Children.Add(about);
+        var coffee = new Button { Content = AboutWindow.CoffeeIcon(20), Padding = new Thickness(7, 4, 7, 4), Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Support Danny on Buy Me a Coffee" };
+        AutomationProperties.SetName(coffee, "Buy Me a Coffee — support Danny");
+        coffee.Click += (_, _) => AboutWindow.Open(Links.Coffee);
+        chrome.Children.Add(coffee);
         clockReadout.FontFamily = Mono; clockReadout.FontSize = 12; clockReadout.Foreground = Accent; clockReadout.VerticalAlignment = VerticalAlignment.Center; clockReadout.Margin = new Thickness(0, 0, 18, 0);
         chrome.Children.Add(clockReadout);
         foreach (var (text, name, action) in new (string, string, Action)[] { ("−", "Minimize", () => WindowState = WindowState.Minimized), ("□", "Maximize", () => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized), ("×", "Close", Close) })
@@ -83,8 +91,8 @@ public sealed class SettingsWindow : Window
         previewGlow.Width = 420; previewGlow.Height = 260; previewGlow.HorizontalAlignment = HorizontalAlignment.Center; previewGlow.VerticalAlignment = VerticalAlignment.Center;
         stage.Children.Add(previewGlow);
         stage.Children.Add(new Viewbox { Child = preview, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new Thickness(28), VerticalAlignment = VerticalAlignment.Center });
-        stage.Children.Add(new TextBlock { Text = "LIVE PREVIEW", FontFamily = Mono, FontSize = 10, Foreground = Accent, Margin = new Thickness(16, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
-        previewCaption.Foreground = Muted; previewCaption.FontFamily = Mono; previewCaption.FontSize = 10; previewCaption.Margin = new Thickness(16, 0, 16, 14);
+        stage.Children.Add(new TextBlock { Text = "LIVE PREVIEW", FontFamily = Mono, FontSize = 10, Foreground = Ui.StageAccent, Margin = new Thickness(16, 14, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top });
+        previewCaption.Foreground = Ui.StageMuted; previewCaption.FontFamily = Mono; previewCaption.FontSize = 10; previewCaption.Margin = new Thickness(16, 0, 16, 14);
         previewCaption.VerticalAlignment = VerticalAlignment.Bottom; previewCaption.HorizontalAlignment = HorizontalAlignment.Left; previewCaption.TextTrimming = TextTrimming.CharacterEllipsis;
         stage.Children.Add(previewCaption);
 
@@ -106,7 +114,7 @@ public sealed class SettingsWindow : Window
         var actions = new Grid(); footer.Child = actions;
         var restore = new Button { Content = "Show clock", Width = 140, HorizontalAlignment = HorizontalAlignment.Left }; restore.Click += (_, _) => app.Unlock(); actions.Children.Add(restore);
         status.FontSize = 11; status.FontFamily = Mono; status.Foreground = Muted; status.VerticalAlignment = VerticalAlignment.Center; status.HorizontalAlignment = HorizontalAlignment.Center; status.MaxWidth = 460; status.TextWrapping = TextWrapping.Wrap; actions.Children.Add(status);
-        var done = new Button { Content = "_Done", Width = 128, HorizontalAlignment = HorizontalAlignment.Right, Background = Accent, Foreground = Brushes.Black, BorderBrush = Accent, FontWeight = FontWeights.SemiBold }; done.Click += (_, _) => Close(); actions.Children.Add(done);
+        var done = new Button { Content = "_Done", Width = 128, HorizontalAlignment = HorizontalAlignment.Right, Background = Accent, Foreground = Ui.OnAccent, BorderBrush = Accent, FontWeight = FontWeights.SemiBold }; done.Click += (_, _) => Close(); actions.Children.Add(done);
 
         SizeChanged += (_, _) =>
         {
@@ -118,6 +126,7 @@ public sealed class SettingsWindow : Window
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) { Close(); e.Handled = true; }
+            if (e.Key == Key.F1) { app.OpenAbout(); e.Handled = true; }
             if (Keyboard.Modifiers == ModifierKeys.Control && e.Key >= Key.D1 && e.Key < Key.D1 + Pages.Length)
             { ShowPage(Pages[e.Key - Key.D1]); e.Handled = true; }
         };
@@ -164,7 +173,7 @@ public sealed class SettingsWindow : Window
         page = name; panel.Children.Clear(); locked = clickThrough = topmost = null; scale = null;
         foreach (var (key, button) in navigation)
         {
-            button.Background = key == name ? new SolidColorBrush(Color.FromArgb(28, 0, 229, 255)) : Brushes.Transparent;
+            button.Background = key == name ? Ui.SelectedTint : Brushes.Transparent;
             button.Foreground = key == name ? Accent : Muted;
             button.BorderBrush = key == name ? Accent : Line;
         }
@@ -183,12 +192,13 @@ public sealed class SettingsWindow : Window
 
     // ---- Control helpers ----
     private static TextBlock Copy(string text, double size = 12) => new() { Text = text, FontSize = size, Foreground = Muted, TextWrapping = TextWrapping.Wrap, LineHeight = size * 1.5 };
+    private static Brush Rule() { var a = Ui.AccentColor; return new LinearGradientBrush(Color.FromArgb(90, a.R, a.G, a.B), Colors.Transparent, 0); }
     private void Section(string title, string? subtitle = null)
     {
         var header = new Grid { Margin = new Thickness(0, panel.Children.Count == 0 ? 0 : 26, 0, 10) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); header.ColumnDefinitions.Add(new ColumnDefinition());
         header.Children.Add(new TextBlock { Text = "// " + title.ToUpperInvariant(), FontFamily = Mono, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = Accent, Margin = new Thickness(0, 0, 12, 0) });
-        var rule = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Center, Background = new LinearGradientBrush(Color.FromArgb(90, 0, 229, 255), Colors.Transparent, 0) };
+        var rule = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Center, Background = Rule() };
         Grid.SetColumn(rule, 1); header.Children.Add(rule);
         panel.Children.Add(header);
         if (subtitle != null) { var t = Copy(subtitle); t.Margin = new Thickness(0, 0, 0, 10); panel.Children.Add(t); }
@@ -264,6 +274,24 @@ public sealed class SettingsWindow : Window
     // ---- Pages ----
     private void Theme()
     {
+        Section("Settings appearance", "Colours for this window and About. The clock itself keeps its own look.");
+        var modes = new UniformGridCompat(3) { Margin = new Thickness(0, 0, 0, 4) };
+        foreach (var (mode, label) in new[] { ("Dark", "Dark"), ("Light", "Light"), ("System", "Match Windows") })
+        {
+            bool active = P.UiTheme == mode;
+            var button = new Button { Content = label, Margin = new Thickness(0, 0, 8, 0), BorderBrush = active ? Accent : Line, BorderThickness = new Thickness(active ? 1.5 : 1), Background = active ? Ui.SelectedTint : Ui.Control, Foreground = active ? Accent : Ui.Ink };
+            AutomationProperties.SetName(button, label + " settings appearance");
+            button.Click += (_, _) =>
+            {
+                if (P.UiTheme == mode) return;
+                P.UiTheme = mode; app.Apply();
+                // Rebuild after this click finishes so every colour picks up the new palette.
+                Dispatcher.BeginInvoke(() => app.ApplyUiTheme(force: true, page: page));
+            };
+            modes.Children.Add(button);
+        }
+        panel.Children.Add(modes);
+
         Section("Presets", "Each preset is a starting point. Change anything afterwards on the Style and Effects pages.");
         var gallery = new UniformGridCompat(2);
         var sample = DateTime.Now;
@@ -275,7 +303,7 @@ public sealed class SettingsWindow : Window
             var card = new Grid();
             card.RowDefinitions.Add(new RowDefinition { Height = new GridLength(86) }); card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             card.Children.Add(new Viewbox { Child = face, Stretch = Stretch.Uniform, Margin = new Thickness(6, 8, 6, 4) });
-            var title = new TextBlock { Text = (name == "Typography" ? "TYPE" : name.ToUpperInvariant()), FontFamily = Mono, FontSize = 11, Foreground = active ? Accent : Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 2) };
+            var title = new TextBlock { Text = (name == "Typography" ? "TYPE" : name.ToUpperInvariant()), FontFamily = Mono, FontSize = 11, Foreground = active ? Ui.StageAccent : Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 2) };
             Grid.SetRow(title, 1); card.Children.Add(title);
             var button = new Button { Content = card, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(6), HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 BorderBrush = active ? Accent : Line, BorderThickness = new Thickness(active ? 1.5 : 1), Background = active ? new SolidColorBrush(Color.FromRgb(8, 30, 44)) : new LinearGradientBrush(Color.FromRgb(8, 16, 30), Color.FromRgb(14, 10, 30), 45) };
@@ -293,7 +321,7 @@ public sealed class SettingsWindow : Window
             var chips = new StackPanel { Orientation = Orientation.Horizontal };
             foreach (var hex in new[] { text, accent })
                 chips.Children.Add(new Border { Width = 14, Height = 14, CornerRadius = new CornerRadius(7), Margin = new Thickness(0, 0, 4, 0), Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex)) });
-            chips.Children.Add(new TextBlock { Text = " " + name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Foreground = active ? Accent : Brushes.White });
+            chips.Children.Add(new TextBlock { Text = " " + name.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Foreground = active ? Accent : Ui.Ink });
             var button = new Button { Content = chips, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(10, 7, 12, 7), BorderBrush = active ? Accent : Line };
             AutomationProperties.SetName(button, name + " palette");
             button.Click += (_, _) => { P.TextColor = text; P.AccentColor = accent; P.UseAccent = true; app.Apply(); ShowPage(page); };
@@ -387,9 +415,9 @@ public sealed class SettingsWindow : Window
             var card = new Grid();
             card.RowDefinitions.Add(new RowDefinition { Height = new GridLength(130) }); card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             card.Children.Add(new Viewbox { Child = face, Stretch = Stretch.Uniform, Margin = new Thickness(4, 6, 4, 4) });
-            var title = new TextBlock { Text = style.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Accent : Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+            var title = new TextBlock { Text = style.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Ui.StageAccent : Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
             Grid.SetRow(title, 1); card.Children.Add(title);
-            var hint = new TextBlock { Text = style switch { "Week" => "This week", "Strip" => "Every day in one row", _ => "The whole month" }, FontSize = 10.5, Foreground = Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
+            var hint = new TextBlock { Text = style switch { "Week" => "This week", "Strip" => "Every day in one row", _ => "The whole month" }, FontSize = 10.5, Foreground = Ui.StageMuted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
             Grid.SetRow(hint, 2); card.Children.Add(hint);
             var button = new Button
             {
@@ -462,8 +490,14 @@ public sealed class SettingsWindow : Window
             panel.Children.Add(button);
         }
         panel.Children.Add(Copy("Position is remembered per saved display. If that display disconnects, Still moves to the primary display and stays within its working area."));
-        Section("About Still", $"Still {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · A futuristic desktop clock for Windows 11\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
+        Section("About Still", $"Still {AboutWindow.CurrentVersion.ToString(3)} · A futuristic desktop clock for Windows 11 by {Links.Author}\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
+        var aboutButton = new Button { Content = "About, updates and support…", HorizontalAlignment = HorizontalAlignment.Left };
+        aboutButton.Click += (_, _) => app.OpenAbout();
+        panel.Children.Add(aboutButton);
     }
+
+    public string CurrentPage => page;
+    public void Go(string name) { if (Pages.Contains(name)) ShowPage(name); }
 
     private void Advanced()
     {

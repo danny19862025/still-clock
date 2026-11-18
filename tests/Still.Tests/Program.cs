@@ -250,4 +250,52 @@ Test("malformed themes are rejected without changes", () =>
     Equal<string?>(null, target.ImportTheme("still-theme:{\"Frame\":\"Laser\",\"Preset\":\"Holo\"}"));
     Equal("Holo", target.Preset); Equal("None", target.Frame);
 });
+Test("UI theme: normalized, resolved, and never carried by shared themes", () =>
+{
+    var prefs = new Preferences { UiTheme = "Neon" }; prefs.Normalize(); Equal("Dark", prefs.UiTheme);
+    True(!UiPalette.For("Dark", true).IsLight); True(UiPalette.For("Light", false).IsLight);
+    True(UiPalette.For("System", true).IsLight); True(!UiPalette.For("System", false).IsLight);
+    var source = new Preferences { UiTheme = "Light" };
+    var target = new Preferences { UiTheme = "Dark" };
+    Equal<string?>(null, target.ImportTheme(source.ExportTheme()));
+    Equal("Dark", target.UiTheme);
+});
+Test("update versions compare numerically and reject odd tags", () =>
+{
+    Equal(new Version(2, 10, 0), UpdateChecker.ParseVersion("v2.10.0"));
+    Equal(new Version(3, 1, 0), UpdateChecker.ParseVersion("3.1"));
+    foreach (var bad in new[] { null, "", "latest", "v2.4.0-rc1", "v2", "v1.2.3.4", "v-1.0.0" }) True(UpdateChecker.ParseVersion(bad) == null);
+    True(UpdateChecker.IsNewer(new Version(2, 10, 0), new Version(2, 9, 0)));
+    True(!UpdateChecker.IsNewer(new Version(2, 4, 0), new Version(2, 4, 0)));
+    True(!UpdateChecker.IsNewer(new Version(2, 3, 0), new Version(2, 4, 0)));
+    True(UpdateChecker.IsNewer(new Version(2, 4, 1), new Version(2, 4)));
+});
+Test("latest release parsing trusts only this repository's downloads", () =>
+{
+    const string json = """
+    {"tag_name":"v2.5.0","draft":false,"prerelease":false,"html_url":"https://github.com/danny19862025/still-clock/releases/tag/v2.5.0",
+     "assets":[{"name":"Still-Setup-win-x64.exe","browser_download_url":"https://github.com/danny19862025/still-clock/releases/download/v2.5.0/Still-Setup-win-x64.exe"},
+               {"name":"SHA256SUMS.txt","browser_download_url":"https://evil.example/SHA256SUMS.txt"}]}
+    """;
+    var release = UpdateChecker.ParseLatest(json);
+    Equal(new Version(2, 5, 0), release.Version);
+    True(release.InstallerUrl != null); True(release.ChecksumsUrl == null);
+    True(UpdateChecker.Summary(release, new Version(2, 4, 0)).Contains("2.5.0 is available"));
+    True(UpdateChecker.Summary(release, new Version(2, 5, 0)).Contains("up to date"));
+    foreach (var bad in new[] { "{\"tag_name\":\"v3.0.0\",\"prerelease\":true}", "{\"message\":\"rate limit\"}", "[]" })
+    {
+        bool threw = false;
+        try { UpdateChecker.ParseLatest(bad); } catch (FormatException) { threw = true; }
+        True(threw);
+    }
+});
+Test("checksum listing lookup", () =>
+{
+    string hash = new string('a', 64), other = new string('b', 64);
+    string sums = $"{other}  Still-win-x64.zip\n{hash}  Still-Setup-win-x64.exe\n";
+    Equal<string?>(hash, UpdateChecker.ExpectedHash(sums, "Still-Setup-win-x64.exe"));
+    Equal<string?>(hash, UpdateChecker.ExpectedHash($"{hash} *Still-Setup-win-x64.exe", "Still-Setup-win-x64.exe"));
+    Equal<string?>(null, UpdateChecker.ExpectedHash(sums, "missing.exe"));
+    Equal<string?>(null, UpdateChecker.ExpectedHash("nothex  Still-Setup-win-x64.exe", "Still-Setup-win-x64.exe"));
+});
 Console.WriteLine($"{count} tests passed.");

@@ -122,6 +122,50 @@ internal static class LinuxDesktop
     }
 
     /// <summary>
+    /// KDE Plasma does not apply the X11 "all desktops" request to XWayland windows when it has
+    /// several virtual desktops, so on KDE ask KWin itself through its scripting interface.
+    /// Runs in the background and does nothing elsewhere or if busctl is missing.
+    /// </summary>
+    internal static void PinToAllDesktopsOnKde()
+    {
+        string desktop = Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP") ?? "";
+        if (!desktop.Contains("KDE", StringComparison.OrdinalIgnoreCase)) return;
+        int pid = Environment.ProcessId;
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            try
+            {
+                string dir = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } d ? d : Path.GetTempPath();
+                string script = Path.Combine(dir, $"still-kwin-{pid}.js"), name = $"still-pin-{pid}";
+                File.WriteAllText(script,
+                    "for (const w of workspace.windowList()) {\n" +
+                    $"  if (w.pid === {pid} && String(w.caption).indexOf(\"desktop clock\") >= 0) {{ w.onAllDesktops = true; w.skipTaskbar = true; w.skipPager = true; w.skipSwitcher = true; }}\n" +
+                    "}\n");
+                Busctl("org.kde.kwin.Scripting", "/Scripting", "unloadScript", "s", name);
+                string? loaded = Busctl("org.kde.kwin.Scripting", "/Scripting", "loadScript", "ss", script, name);
+                if (loaded != null && loaded.Trim().Split(' ') is [_, var id] && int.TryParse(id, out int number) && number >= 0)
+                    Busctl("org.kde.kwin.Script", "/Scripting/Script" + number, "run", "");
+                System.Threading.Thread.Sleep(500);
+                Busctl("org.kde.kwin.Scripting", "/Scripting", "unloadScript", "s", name);
+                File.Delete(script);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException) { }
+        });
+    }
+
+    private static string? Busctl(string @interface, string path, string method, string signature, params string[] args)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo("busctl") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+        foreach (var a in new[] { "--user", "call", "org.kde.KWin", path, @interface, method }) start.ArgumentList.Add(a);
+        if (signature.Length > 0) { start.ArgumentList.Add(signature); foreach (var a in args) start.ArgumentList.Add(a); }
+        using var process = System.Diagnostics.Process.Start(start);
+        if (process == null) return null;
+        string output = process.StandardOutput.ReadToEnd();
+        if (!process.WaitForExit(3000)) { try { process.Kill(); } catch (InvalidOperationException) { } return null; }
+        return process.ExitCode == 0 ? output : null;
+    }
+
+    /// <summary>
     /// Brings a window to the front. Requests marked as coming from a pager/taskbar (source 2) are
     /// honoured by window managers' focus-stealing prevention, unlike an app activating itself.
     /// </summary>

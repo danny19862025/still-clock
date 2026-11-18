@@ -50,7 +50,8 @@ cd Still-linux-x64
 
 `install.sh` installs for your user only, without root: the app goes to
 `~/.local/opt/still`, a `still` command to `~/.local/bin`, and **Still** appears in
-your application menu. It starts Still when it finishes. Run it again from a newer
+your application menu. It starts Still when it finishes and sets it to start when you
+log in (use `./install.sh --no-autostart` to skip that, or switch it off in Settings). Run it again from a newer
 download to upgrade; a running Still is closed (saving its settings) and restarted.
 To remove Still, run `~/.local/opt/still/uninstall.sh` (add `--purge` to also delete
 your settings). You can also run `./still` straight from the extracted folder.
@@ -74,8 +75,8 @@ Linux notes:
   other way round) carries a look across.
 - Preferences are stored in `~/.config/still/settings.json`. **Launch Still when I
   log in** adds `~/.config/autostart/still.desktop`.
-- The widget skips the taskbar, pager and Alt+Tab, and asks to appear on every virtual
-  desktop. Transparency needs a compositor (standard on Plasma, GNOME and most others).
+- The widget skips the taskbar, pager and Alt+Tab and appears on every virtual desktop
+  (on KDE Plasma, Still asks KWin for this through its scripting interface). Transparency needs a compositor (standard on Plasma, GNOME and most others).
 
 ### Everyday controls
 

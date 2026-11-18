@@ -97,7 +97,7 @@ public sealed class ClockWindow : Window
     private void ApplyHintsSoon()
     {
         Dispatcher.UIThread.Post(() => { LinuxDesktop.ApplyWidgetHints(this); ApplyInteraction(); }, DispatcherPriority.Background);
-        DispatcherTimer.RunOnce(() => { if (IsVisible) LinuxDesktop.ApplyWidgetHints(this); }, TimeSpan.FromMilliseconds(600));
+        DispatcherTimer.RunOnce(() => { if (IsVisible) { LinuxDesktop.ApplyWidgetHints(this); LinuxDesktop.PinToAllDesktopsOnKde(); } }, TimeSpan.FromMilliseconds(600));
     }
 
     private void BeginScale(object? sender, PointerPressedEventArgs e)

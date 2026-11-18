@@ -7,7 +7,7 @@ namespace Still.App;
 
 public sealed class SettingsWindow : Window
 {
-    private static readonly string[] Pages = ["Theme", "Style", "Effects", "Advanced"];
+    private static readonly string[] Pages = ["Theme", "Style", "Effects", "Calendar", "Advanced"];
     private readonly ClockApplication app;
     private readonly ClockFace preview = new();
     private readonly StackPanel panel = new();
@@ -173,6 +173,7 @@ public sealed class SettingsWindow : Window
             case "Theme": Theme(); break;
             case "Style": StylePage(); break;
             case "Effects": Effects(); break;
+            case "Calendar": CalendarPage(); break;
             default: Advanced(); break;
         }
         UpdateStatus();
@@ -369,6 +370,46 @@ public sealed class SettingsWindow : Window
         scale = Range("Overall sca_le", .5, 2, P.Scale, .05, v => P.Scale = v, "0.00'×'");
         Note("You can also drag the clock’s lower-right corner while it is unlocked.");
         Range("Widget _opacity", .2, 1, P.Opacity, .05, v => P.Opacity = v, "0%");
+    }
+
+    private void CalendarPage()
+    {
+        Section("Calendar", "An optional calendar that sits with your clock.");
+        Check("Show calendar", P.ShowCalendar, v => P.ShowCalendar = v, rebuild: true);
+        Section("Mode", "Pick a mode. Each card is a live preview of your clock with that calendar.");
+        var gallery = new UniformGridCompat(3);
+        foreach (var style in Preferences.CalendarStyles)
+        {
+            var look = new Preferences(); look.ImportTheme(P.ExportTheme());
+            look.ShowCalendar = true; look.CalendarStyle = style; look.CalendarPlacement = "Below";
+            var face = new ClockFace(); face.Update(look, DateTime.Now);
+            bool active = P.ShowCalendar && P.CalendarStyle == style;
+            var card = new Grid();
+            card.RowDefinitions.Add(new RowDefinition { Height = new GridLength(130) }); card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            card.Children.Add(new Viewbox { Child = face, Stretch = Stretch.Uniform, Margin = new Thickness(4, 6, 4, 4) });
+            var title = new TextBlock { Text = style.ToUpperInvariant(), FontFamily = Mono, FontSize = 11, Foreground = active ? Accent : Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+            Grid.SetRow(title, 1); card.Children.Add(title);
+            var hint = new TextBlock { Text = style switch { "Week" => "This week", "Strip" => "Every day in one row", _ => "The whole month" }, FontSize = 10.5, Foreground = Muted, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
+            Grid.SetRow(hint, 2); card.Children.Add(hint);
+            var button = new Button
+            {
+                Content = card, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(6), HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                BorderBrush = active ? Accent : Line, BorderThickness = new Thickness(active ? 1.5 : 1),
+                Background = active ? new SolidColorBrush(Color.FromRgb(8, 30, 44)) : new LinearGradientBrush(Color.FromRgb(8, 16, 30), Color.FromRgb(14, 10, 30), 45)
+            };
+            AutomationProperties.SetName(button, style + " calendar");
+            button.Click += (_, _) => { P.CalendarStyle = style; P.ShowCalendar = true; app.Apply(); ShowPage(page); app.Clock.RestorePosition(); };
+            gallery.Children.Add(button);
+        }
+        panel.Children.Add(gallery);
+        Section("Layout");
+        Choice("_Placement", Preferences.CalendarPlacements, P.CalendarPlacement, v => P.CalendarPlacement = v);
+        Choice("Week _starts on", Preferences.WeekStarts, P.WeekStart, v => P.WeekStart = v);
+        Note("Regional follows your language and region settings.");
+        Check("Show week numbers", P.WeekNumbers, v => P.WeekNumbers = v);
+        Check("Dim weekends", P.DimWeekends, v => P.DimWeekends = v);
+        Check("Show days from other months", P.OtherMonthDays, v => P.OtherMonthDays = v);
+        Note("Today is marked in the accent colour, and the calendar turns over at midnight. Month and day names follow your system language. The calendar uses the clock's font, colours, glow and surface, and stays when you switch presets.");
     }
 
     private void Effects()

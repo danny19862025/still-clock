@@ -130,6 +130,7 @@ public sealed class ClockFace : FrameworkElement
                 y += size * 1.6;
             }
         }
+        y = LayoutCalendar(y, culture);
         Width = Math.Ceiling(bodyWidth + padding * 2);
         Height = Math.Ceiling(y + padding);
         Opacity = p.Opacity;
@@ -153,6 +154,7 @@ public sealed class ClockFace : FrameworkElement
     private static Color Alpha(Color c, double a) => Color.FromArgb((byte)Math.Clamp(a * 255, 0, 255), c.R, c.G, c.B);
     private static Color Mix(Color a, Color b, double t) => Color.FromRgb((byte)(a.R + (b.R - a.R) * t), (byte)(a.G + (b.G - a.G) * t), (byte)(a.B + (b.B - a.B) * t));
     private static Brush Frozen(Brush b) { b.Freeze(); return b; }
+    private static Brush Solid(Color c) => Frozen(new SolidColorBrush(c));
     private FormattedText Glyph(string s, double size, Brush brush) => new(s, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, size, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
     // Small uppercase lines get extra tracking for an instrument-panel feel.
@@ -439,6 +441,116 @@ public sealed class ClockFace : FrameworkElement
         if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, xX, xTimeW, xIndicatorY);
     }
 
+    // ---- Optional calendar: Month grid, Week row or a Strip of the month, below or to the right of the clock ----
+    private bool calendarOn;
+    private DateTime[] calDays = [];
+    private string[] calHeads = [];
+    private string calTitle = "";
+    private int calColumns, calRows;
+    private double clockWidth, clockShift, calX, calY, calW, calSize, calCell, calRowH, calWeekCol, calTitleY, calHeadY, calGridY;
+
+    private double LayoutCalendar(double y, CultureInfo culture)
+    {
+        clockWidth = bodyWidth; clockShift = 0;
+        calendarOn = p.ShowCalendar;
+        if (!calendarOn) return y;
+        var first = CalendarModel.FirstDay(p, culture);
+        var today = now.Date;
+        calSize = Math.Max(9, mainSize * .17);
+        calCell = calSize * 2.2; calRowH = calSize * 1.85;
+        switch (p.CalendarStyle)
+        {
+            case "Week":
+                calDays = CalendarModel.Week(today, first); calColumns = 7; calRows = 1;
+                calHeads = CalendarModel.DayInitials(first, culture);
+                calTitle = Case((culture.TwoLetterISOLanguageName == "en" ? "Week " : "") + CalendarModel.WeekNumber(today) + "  ·  " + today.ToString("MMMM yyyy", culture), culture);
+                break;
+            case "Strip":
+                calDays = CalendarModel.MonthDays(today); calColumns = 31; calRows = 1; calCell = calSize * 2.05;
+                calHeads = calDays.Select(d => culture.DateTimeFormat.ShortestDayNames[(int)d.DayOfWeek][..1]).ToArray();
+                calTitle = Case(today.ToString("MMMM yyyy", culture), culture);
+                break;
+            default:
+                calDays = CalendarModel.MonthGrid(today, first); calColumns = 7; calRows = 6;
+                calHeads = CalendarModel.DayInitials(first, culture);
+                calTitle = Case(today.ToString("MMMM yyyy", culture), culture);
+                break;
+        }
+        calHeads = calHeads.Select(h => Case(h, culture)).ToArray();
+        calWeekCol = p.WeekNumbers && p.CalendarStyle != "Strip" ? calCell : 0;
+        calW = calWeekCol + calCell * calColumns;
+        double titleSize = calSize * 1.05;
+        var (titleTop, titleH) = Ink("8", titleSize);
+        double height = titleH + calSize * .9 + calRowH * (calRows + 1);
+        double gap = mainSize * .32;
+        double top;
+        if (p.CalendarPlacement == "Right")
+        {
+            calX = padding + clockWidth + gap;
+            top = padding + Math.Max(0, (y - padding - height) / 2);
+            bodyWidth = clockWidth + gap + calW;
+            y = Math.Max(y, top + height);
+        }
+        else
+        {
+            double total = Math.Max(clockWidth, calW);
+            clockShift = (total - clockWidth) / 2;
+            calX = padding + (total - calW) / 2;
+            top = y + gap * .5;
+            bodyWidth = total;
+            y = top + height;
+        }
+        calY = top;
+        calTitleY = top - titleTop;
+        calHeadY = top + titleH + calSize * .9;
+        calGridY = calHeadY + calRowH;
+        return y;
+    }
+
+    private void RenderCalendar(DrawingContext dc, Color text, Color accent)
+    {
+        var ink = Solid(text); var dimmed = Solid(Alpha(text, .45)); var faint = Solid(Alpha(text, .2));
+        var weekend = Solid(Alpha(text, .55)); var accentBrush = Solid(accent); var weekBrush = Solid(Alpha(accent, .65));
+        // Today's number: dark on a light accent, white on a dark or saturated one.
+        double luminance = (.2126 * accent.R + .7152 * accent.G + .0722 * accent.B) / 255;
+        var onAccent = Solid(luminance > .55 ? Color.FromRgb(5, 8, 15) : Colors.White);
+        double titleSize = calSize * 1.05;
+        DrawStable(dc, calTitle, titleSize, accentBrush, calX + (calW - StableWidth(calTitle, titleSize)) / 2, calTitleY);
+        var (top, height) = Ink("8", calSize);
+        double x0 = calX + calWeekCol;
+        double TextY(double rowTop) => rowTop + (calRowH - height) / 2 - top;
+        for (int i = 0; i < calHeads.Length; i++)
+        {
+            string head = calHeads[i];
+            bool isWeekend = p.CalendarStyle == "Strip" ? CalendarModel.IsWeekend(calDays[i]) : CalendarModel.IsWeekend(calDays[i % 7]);
+            DrawStable(dc, head, calSize * .82, isWeekend && p.DimWeekends ? faint : dimmed, x0 + i * calCell + (calCell - StableWidth(head, calSize * .82)) / 2, calHeadY + (calRowH - height) / 2 - top);
+        }
+        var today = now.Date;
+        for (int i = 0; i < calDays.Length; i++)
+        {
+            var day = calDays[i];
+            int column = i % calColumns, row = i / calColumns;
+            bool other = day.Month != today.Month;
+            if (other && !p.OtherMonthDays) continue;
+            string label = day.Day.ToString(CultureInfo.InvariantCulture);
+            double cx = x0 + column * calCell + calCell / 2, rowTop = calGridY + row * calRowH;
+            var brush = other ? faint : CalendarModel.IsWeekend(day) && p.DimWeekends ? weekend : ink;
+            if (day == today)
+            {
+                double r = Math.Min(calCell, calRowH) * .46;
+                dc.DrawEllipse(accentBrush, null, new Point(cx, rowTop + calRowH / 2), r, r);
+                brush = onAccent;
+            }
+            DrawStable(dc, label, calSize, brush, cx - StableWidth(label, calSize) / 2, TextY(rowTop));
+        }
+        if (calWeekCol > 0)
+            for (int row = 0; row < calRows; row++)
+            {
+                string week = CalendarModel.WeekNumber(calDays[row * calColumns + Math.Min(3, calColumns - 1)]).ToString(CultureInfo.InvariantCulture);
+                DrawStable(dc, week, calSize * .8, weekBrush, calX + (calWeekCol - StableWidth(week, calSize * .8)) / 2, TextY(calGridY + row * calRowH) + calSize * .1);
+            }
+    }
+
     private bool arcLayout;
     private string aHour = "", aMinute = "", aDate = "";
     private double aSize, aTop, aH, aX, aW, aHourY, aMinY, aCx, aCy, aRx, aRy, aDateSize, aDateY;
@@ -593,7 +705,7 @@ public sealed class ClockFace : FrameworkElement
             DrawIndicator(dc, accent, pMonthX, pLineW, pLineY);
     }
 
-    private double LineX(double width) => padding + (p.Alignment == "Center" ? (bodyWidth - width) / 2 : p.Alignment == "Right" ? bodyWidth - width : 0);
+    private double LineX(double width) => padding + (p.Alignment == "Center" ? (clockWidth - width) / 2 : p.Alignment == "Right" ? clockWidth - width : 0);
 
     private void Render()
     {
@@ -601,7 +713,7 @@ public sealed class ClockFace : FrameworkElement
         var text = Hex(p.TextColor);
         var accent = p.UseAccent ? Hex(p.AccentColor) : text;
         Brush inkBrush = p.Gradient
-            ? Frozen(new LinearGradientBrush(new GradientStopCollection { new(text, 0), new(Mix(text, accent, .5), .55), new(accent, 1) }) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(padding, 0), EndPoint = new Point(padding + bodyWidth, mainSize) })
+            ? Frozen(new LinearGradientBrush(new GradientStopCollection { new(text, 0), new(Mix(text, accent, .5), .55), new(accent, 1) }) { MappingMode = BrushMappingMode.Absolute, StartPoint = new Point(padding, 0), EndPoint = new Point(padding + clockWidth, mainSize) })
             : Frozen(new SolidColorBrush(text));
         Brush accentBrush = Frozen(new SolidColorBrush(accent));
         double radius = Math.Min(p.CornerRadius * p.Scale, Math.Min(Width, Height) / 2);
@@ -628,6 +740,8 @@ public sealed class ClockFace : FrameworkElement
         using (var dc = ink.RenderOpen())
         {
             DrawFrame(dc, accent, card, radius);
+            // A wide calendar below centres the clock above it.
+            dc.PushTransform(new TranslateTransform(clockShift, 0));
             Brush? dim = p.BlinkSeparator && now.Second % 2 == 1 ? Frozen(new SolidColorBrush(Alpha(text, .22))) : null;
             foreach (var line in lines)
             {
@@ -637,7 +751,7 @@ public sealed class ClockFace : FrameworkElement
                     case Role.Caption:
                         double cx = padding;
                         if (line.Text.Length > 0) DrawStable(dc, line.Text, line.Size, brush, cx, line.Y);
-                        if (line.Trailing.Length > 0) DrawStable(dc, line.Trailing, line.Size, Frozen(new SolidColorBrush(Alpha(accent, .7))), padding + bodyWidth - StableWidth(line.Trailing, line.Size), line.Y);
+                        if (line.Trailing.Length > 0) DrawStable(dc, line.Trailing, line.Size, Frozen(new SolidColorBrush(Alpha(accent, .7))), padding + clockWidth - StableWidth(line.Trailing, line.Size), line.Y);
                         break;
                     case Role.Time:
                         double x = LineX(StableWidth(line.Text, line.Size) + suffixFieldWidth);
@@ -653,12 +767,14 @@ public sealed class ClockFace : FrameworkElement
                         break;
                 }
             }
-            if (indicatorY >= 0) DrawIndicator(dc, accent, padding, bodyWidth, indicatorY);
+            if (indicatorY >= 0) DrawIndicator(dc, accent, padding, clockWidth, indicatorY);
             if (poster) RenderPoster(dc, text, accent, inkBrush, dim);
             if (scriptLayout) RenderScript(dc, text, accent, inkBrush);
             if (overlayLayout) RenderOverlay(dc, text, accent, dim);
             if (arcLayout) RenderArc(dc, text, accent, inkBrush, dim);
             if (splitLayout) RenderSplit(dc, text, accent, inkBrush, dim);
+            dc.Pop();
+            if (calendarOn) RenderCalendar(dc, text, accent);
         }
         ink.Effect = p.Glow ? new DropShadowEffect { Color = accent, ShadowDepth = 0, BlurRadius = GlowRadius(), Opacity = .45 + .55 * p.GlowStrength, RenderingBias = RenderingBias.Quality } : null;
 

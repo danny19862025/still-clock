@@ -196,6 +196,28 @@ Test("split preset: bold accent hour layout on a flat panel", () =>
     split.ApplyPreset("Neon"); Equal("Classic", split.Layout);
     var odd = new Preferences { Layout = "Split" }; odd.Normalize(); Equal("Split", odd.Layout);
 });
+Test("calendar: month grid, weeks, strip, week start and week numbers", () =>
+{
+    var day = new DateTime(2026, 11, 18); // a Wednesday
+    var grid = CalendarModel.MonthGrid(day, DayOfWeek.Monday);
+    Equal(42, grid.Length); Equal(new DateTime(2026, 10, 26), grid[0]); Equal(DayOfWeek.Monday, grid[0].DayOfWeek);
+    True(grid.Contains(new DateTime(2026, 11, 1)) && grid.Contains(new DateTime(2026, 11, 30)));
+    Equal(new DateTime(2026, 11, 1), CalendarModel.MonthGrid(day, DayOfWeek.Sunday)[0]); // the 1st is a Sunday
+    var week = CalendarModel.Week(day, DayOfWeek.Monday);
+    Equal(new DateTime(2026, 11, 16), week[0]); Equal(new DateTime(2026, 11, 22), week[6]);
+    Equal(new DateTime(2026, 11, 14), CalendarModel.Week(day, DayOfWeek.Saturday)[0]);
+    Equal(30, CalendarModel.MonthDays(day).Length); Equal(29, CalendarModel.MonthDays(new DateTime(2028, 2, 3)).Length);
+    Equal(47, CalendarModel.WeekNumber(day)); Equal(53, CalendarModel.WeekNumber(new DateTime(2026, 12, 31)));
+    Equal("Mo", CalendarModel.DayInitials(DayOfWeek.Monday, en)[0]); Equal("Su", CalendarModel.DayInitials(DayOfWeek.Monday, en)[6]);
+    Equal(DayOfWeek.Sunday, CalendarModel.FirstDay(new Preferences { WeekStart = "Sunday" }, en));
+});
+Test("calendar settings: off by default, kept by presets, normalized", () =>
+{
+    var p2 = new Preferences(); True(!p2.ShowCalendar); Equal("Month", p2.CalendarStyle);
+    p2.ShowCalendar = true; p2.CalendarStyle = "Week"; p2.ApplyPreset("Split"); True(p2.ShowCalendar); Equal("Week", p2.CalendarStyle);
+    var bad = new Preferences { CalendarStyle = "Year", CalendarPlacement = "Above", WeekStart = "Friday" }; bad.Normalize();
+    Equal("Month", bad.CalendarStyle); Equal("Below", bad.CalendarPlacement); Equal("Regional", bad.WeekStart);
+});
 Test("date styles", () =>
 {
     var d = new Preferences { WeekdayStyle = "Short", DateStyle = "ISO" };

@@ -12,6 +12,9 @@ public sealed class Preferences
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
     public static readonly string[] DateStyles = ["Long", "Short", "ISO", "Numeric"];
     public static readonly string[] WeekdayStyles = ["Full", "Short", "Line"];
+    public static readonly string[] CalendarStyles = ["Month", "Week", "Strip"];
+    public static readonly string[] CalendarPlacements = ["Below", "Right"];
+    public static readonly string[] WeekStarts = ["Regional", "Monday", "Sunday", "Saturday"];
 
     /// <summary>Text/accent colour pairs offered as one-click palettes.</summary>
     public static readonly (string Name, string Text, string Accent)[] Palettes =
@@ -72,6 +75,16 @@ public sealed class Preferences
     public bool Advanced { get; set; }
     public string Template { get; set; } = "{time}\n{weekday} · {date}";
     public SavedPosition? Position { get; set; }
+
+    // Optional calendar shown with the clock. Off by default; presets leave it as it is.
+    public bool ShowCalendar { get; set; }
+    /// <summary>Month: a full month grid. Week: the current week. Strip: every day of the month in one row.</summary>
+    public string CalendarStyle { get; set; } = "Month";
+    public string CalendarPlacement { get; set; } = "Below";
+    public string WeekStart { get; set; } = "Regional";
+    public bool WeekNumbers { get; set; }
+    public bool DimWeekends { get; set; } = true;
+    public bool OtherMonthDays { get; set; } = true;
 
     /// <summary>Fresh-install appearance.</summary>
     public static Preferences CreateDefault()
@@ -178,6 +191,9 @@ public sealed class Preferences
         if (!Indicators.Contains(SecondsIndicator)) SecondsIndicator = "None";
         if (!DateStyles.Contains(DateStyle)) DateStyle = "Long";
         if (!WeekdayStyles.Contains(WeekdayStyle)) WeekdayStyle = "Full";
+        if (!CalendarStyles.Contains(CalendarStyle)) CalendarStyle = "Month";
+        if (!CalendarPlacements.Contains(CalendarPlacement)) CalendarPlacement = "Below";
+        if (!WeekStarts.Contains(WeekStart)) WeekStart = "Regional";
         Caption = (Caption ?? "").Replace("\r", "").Replace("\n", " ");
         if (Caption.Length > 40) Caption = Caption[..40];
         if (TemplateFormatter.Validate(Template) != null) Template = "{time}\n{weekday} · {date}";

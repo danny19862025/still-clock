@@ -80,12 +80,13 @@ Linux notes:
 
 ### Everyday controls
 
-Settings has four pages (**Ctrl+1–4**):
+Settings has five pages (**Ctrl+1–5**):
 
 - **01 Theme:** a live gallery of all thirteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
 - **02 Style:** layout (Classic, Poster, Script, Overlay, Arc or Split), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
-- **04 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
+- **04 Calendar:** an optional calendar with the clock. Pick a mode from live previews: **Month** (the whole month), **Week** (this week) or **Strip** (every day of the month in one row). Place it below or to the right of the clock, choose the first day of the week, and show week numbers, dimmed weekends and days from neighbouring months. Today is marked in the accent colour. Off by default; it stays when you switch presets.
+- **05 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
 - **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
 
 ### Thirteen starting points
@@ -149,7 +150,7 @@ oversized themes are rejected, and values are clamped the same way as saved sett
   deleting the portable app. Windows startup policy can override this preference.
 
 Settings supports Tab/Shift+Tab, Space, arrow keys, labelled controls and access
-keys. **Ctrl+1–4** switches Theme/Style/Effects/Advanced. **Reset defaults**
+keys. **Ctrl+1–5** switches Theme/Style/Effects/Calendar/Advanced. **Reset defaults**
 restores appearance and interaction defaults and disables login launch; it keeps
 the current position. The tray restore action recovers visibility and interaction.
 

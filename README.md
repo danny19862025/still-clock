@@ -80,7 +80,7 @@ Linux notes:
 Settings has four pages (**Ctrl+1–4**):
 
 - **01 Theme:** a live gallery of all twelve presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
-- **02 Style:** layout (Classic, Poster, Script, Overlay or Arc), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours, time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **02 Style:** layout (Classic, Poster, Script, Overlay or Arc), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
 - **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.

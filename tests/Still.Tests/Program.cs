@@ -179,6 +179,15 @@ Test("seconds indicator and blinking separator tick every second", () =>
     True(TemplateFormatter.NeedsSeconds(new Preferences { BlinkSeparator = true }));
     Equal(TimeSpan.FromMilliseconds(1015), TemplateFormatter.NextUpdate(midnight, new Preferences { SecondsIndicator = "Dots" }));
 });
+Test("typed hex colours: with or without #, short form, any case", () =>
+{
+    Equal("#FF2BD6", Preferences.ParseHexColor("#ff2bd6"));
+    Equal("#FF2BD6", Preferences.ParseHexColor("  FF2BD6 "));
+    Equal("#FF22DD", Preferences.ParseHexColor("#f2d"));
+    Equal("#00E5FF", Preferences.ParseHexColor("00e5ff"));
+    foreach (string bad in new[] { "", "#", "#12345", "#1234567", "#GG0000", "red", "#12 34 56", null! }) Equal<string?>(null, Preferences.ParseHexColor(bad));
+    True(Preferences.IsColor(Preferences.ParseHexColor("abc")));
+});
 Test("date styles", () =>
 {
     var d = new Preferences { WeekdayStyle = "Short", DateStyle = "ISO" };

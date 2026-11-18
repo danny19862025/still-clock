@@ -220,18 +220,43 @@ public sealed class SettingsWindow : Window
     private void ColorPicker(string name, string selected, Action<string> change)
     {
         var chip = new Border { Width = 18, Height = 18, CornerRadius = new CornerRadius(3), Margin = new Thickness(0, 0, 12, 0), BorderBrush = Line, BorderThickness = new Thickness(1), Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selected)) };
-        var label = new TextBlock { Text = selected.ToUpperInvariant(), FontFamily = Mono, VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock { Text = "Pick…", VerticalAlignment = VerticalAlignment.Center };
         var content = new StackPanel { Orientation = Orientation.Horizontal }; content.Children.Add(chip); content.Children.Add(label);
         var button = new Button { Content = content, HorizontalContentAlignment = HorizontalAlignment.Left };
-        Field(name, button);
+        AutomationProperties.SetName(button, name.Replace("_", ""));
+        // Type or paste a hex code (#FF2BD6, FF2BD6 or #F2D); a valid code applies as you type.
+        var hex = new TextBox { Text = selected.ToUpperInvariant(), FontFamily = Mono, Width = 120, MaxLength = 9, Margin = new Thickness(10, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center, ToolTip = "Type a hex colour such as #FF2BD6 or #F2D" };
+        AutomationProperties.SetName(hex, name.Replace("_", "") + " hex code");
+        var row = new DockPanel();
+        DockPanel.SetDock(hex, Dock.Right); row.Children.Add(hex); row.Children.Add(button);
+        panel.Children.Add(new Label { Content = name, Target = hex, Margin = new Thickness(0, 9, 0, 0) });
+        panel.Children.Add(row);
+        bool updating = false;
+        void Set(string value, bool fromText)
+        {
+            if (value.Equals(selected, StringComparison.OrdinalIgnoreCase)) return;
+            selected = value;
+            chip.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selected));
+            if (!fromText) { updating = true; hex.Text = selected; updating = false; }
+            change(selected); app.Apply();
+        }
         button.Click += (_, _) =>
         {
             using var dialog = new Forms.ColorDialog { FullOpen = true, Color = System.Drawing.ColorTranslator.FromHtml(selected), CustomColors = [0xFFE500, 0xD62BFF, 0x66FF00, 0x00B0FF, 0xFF6B9D, 0x3D4DFF, 0xEDF3F5, 0x1A0A04] };
             if (dialog.ShowDialog() != Forms.DialogResult.OK) return;
-            selected = $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
-            chip.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(selected)); label.Text = selected;
-            change(selected); app.Apply();
+            Set($"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}", false);
         };
+        hex.TextChanged += (_, _) =>
+        {
+            if (updating) return;
+            string? value = Preferences.ParseHexColor(hex.Text);
+            if (value == null && !string.IsNullOrWhiteSpace(hex.Text)) hex.BorderBrush = Magenta; else hex.ClearValue(Control.BorderBrushProperty);
+            if (value != null) Set(value, true);
+        };
+        // Leaving the box (or pressing Enter) tidies it to the colour in use, e.g. "f2d" → "#FF22DD".
+        void Tidy() { updating = true; hex.Text = selected; hex.ClearValue(Control.BorderBrushProperty); updating = false; }
+        hex.LostKeyboardFocus += (_, _) => Tidy();
+        hex.KeyDown += (_, e) => { if (e.Key == Key.Enter) { Tidy(); e.Handled = true; } };
     }
     private void Note(string text) { var t = Copy(text, 11.5); t.Margin = new Thickness(0, 2, 0, 4); panel.Children.Add(t); }
 

@@ -226,19 +226,42 @@ public sealed class SettingsWindow : Window
     private void ColorChoice(string name, string selected, Action<string> change)
     {
         var picker = new ColorPicker { Color = Color.Parse(selected), IsAlphaEnabled = false, IsAlphaVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
-        var hex = new TextBlock { Text = selected.ToUpperInvariant(), FontFamily = Mono, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        // Type or paste a hex code (#FF2BD6, FF2BD6 or #F2D); a valid code applies as you type.
+        var hex = new TextBox { Text = selected.ToUpperInvariant(), FontFamily = Mono, Width = 120, MaxLength = 9, Watermark = "#RRGGBB", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        ToolTip.SetTip(hex, "Type a hex colour such as #FF2BD6 or #F2D");
         var row = new StackPanel { Orientation = Orientation.Horizontal };
         row.Children.Add(picker); row.Children.Add(hex);
-        panel.Children.Add(new Label { Content = name, Target = picker, Margin = new Thickness(0, 10, 0, 0) });
+        panel.Children.Add(new Label { Content = name, Target = hex, Margin = new Thickness(0, 10, 0, 0) });
         AutomationProperties.SetName(picker, name.Replace("_", ""));
+        AutomationProperties.SetName(hex, name.Replace("_", "") + " hex code");
         panel.Children.Add(row);
+        bool updating = false;
+        void Set(string value, bool fromText)
+        {
+            if (value.Equals(selected, StringComparison.OrdinalIgnoreCase)) return;
+            selected = value;
+            updating = true;
+            if (fromText) picker.Color = Color.Parse(value); else hex.Text = value;
+            updating = false;
+            change(value); app.Apply();
+        }
         picker.ColorChanged += (_, e) =>
         {
+            if (updating) return;
             var c = e.NewColor;
-            string value = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-            if (value.Equals(selected, StringComparison.OrdinalIgnoreCase)) return;
-            selected = value; hex.Text = value; change(value); app.Apply();
+            Set($"#{c.R:X2}{c.G:X2}{c.B:X2}", false);
         };
+        hex.TextChanged += (_, _) =>
+        {
+            if (updating) return;
+            string? value = Preferences.ParseHexColor(hex.Text);
+            if (value == null && !string.IsNullOrWhiteSpace(hex.Text)) hex.BorderBrush = Magenta; else hex.ClearValue(TextBox.BorderBrushProperty);
+            if (value != null) Set(value, true);
+        };
+        // Leaving the box (or pressing Enter) tidies it to the colour in use, e.g. "f2d" → "#FF22DD".
+        void Tidy() { updating = true; hex.Text = selected; hex.ClearValue(TextBox.BorderBrushProperty); updating = false; }
+        hex.LostFocus += (_, _) => Tidy();
+        hex.KeyDown += (_, e) => { if (e.Key == Key.Enter) { Tidy(); e.Handled = true; } };
     }
     private void Note(string text) { var t = Copy(text, 11.5); t.Margin = new Thickness(0, 2, 0, 4); panel.Children.Add(t); }
 

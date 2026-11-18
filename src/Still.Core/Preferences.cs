@@ -209,6 +209,18 @@ public sealed class Preferences
     }
 
     public static bool IsColor(string? value) => value != null && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$");
+
+    /// <summary>
+    /// Reads a typed hex colour: "#FF2BD6", "ff2bd6", "#F2D" or "F2D", with surrounding spaces allowed.
+    /// Returns the normalized "#RRGGBB" form, or null if the text is not a colour.
+    /// </summary>
+    public static string? ParseHexColor(string? text)
+    {
+        string value = (text ?? "").Trim().TrimStart('#');
+        if (!Regex.IsMatch(value, "^([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")) return null;
+        if (value.Length == 3) value = string.Concat(value.Select(c => $"{c}{c}"));
+        return "#" + value.ToUpperInvariant();
+    }
     private static double Limit(double value, double min, double max, double fallback) =>
         double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
 }

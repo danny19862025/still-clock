@@ -462,7 +462,7 @@ public sealed class SettingsWindow : Window
             panel.Children.Add(button);
         }
         panel.Children.Add(Copy("Position is remembered per saved display. If that display disconnects, Still moves to the primary display and stays within its working area."));
-        Section("About Still", "Still 2.0 · A futuristic desktop clock for Windows 11\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
+        Section("About Still", $"Still {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · A futuristic desktop clock for Windows 11\nOriginal WPF design inspired by HTML Clock for Plasma by Marcin Orlowski (MIT). See THIRD-PARTY-NOTICES.md for attribution.");
     }
 
     private void Advanced()

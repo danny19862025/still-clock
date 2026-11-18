@@ -98,17 +98,26 @@ public partial class ClockApplication : Application
             settings.Closed += (_, _) => { settings = null; RefreshTime(); };
         }
         settings.Show(); settings.WindowState = WindowState.Normal; settings.Activate(); RefreshTime();
+        FrontSoon(settings, true);
+    }
+
+    // A new window is still being managed when it first appears, so ask twice.
+    private static void FrontSoon(Window window, bool activate)
+    {
+        Dispatcher.UIThread.Post(() => LinuxDesktop.BringToFront(window, activate), DispatcherPriority.Background);
+        DispatcherTimer.RunOnce(() => { if (window.IsVisible) LinuxDesktop.BringToFront(window, activate); }, TimeSpan.FromMilliseconds(400));
     }
     public void Unlock()
     {
         Preferences.ClickThrough = false; Preferences.Locked = false;
         Clock.ShowClock();
         Apply(); Clock.RestorePosition(); settings?.SyncBehavior();
+        FrontSoon(Clock, false);
     }
     public void ToggleVisibility()
     {
         if (Clock.IsVisible && Clock.WindowState != WindowState.Minimized) { Clock.CapturePosition(); Clock.Hide(); }
-        else { Clock.ShowClock(); Clock.RestorePosition(); }
+        else { Clock.ShowClock(); Clock.RestorePosition(); FrontSoon(Clock, false); }
         RefreshTime(); UpdateTrayMenu();
     }
     public void Reset()

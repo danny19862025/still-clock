@@ -121,6 +121,23 @@ internal static class LinuxDesktop
         catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException) { }
     }
 
+    /// <summary>
+    /// Brings a window to the front. Requests marked as coming from a pager/taskbar (source 2) are
+    /// honoured by window managers' focus-stealing prevention, unlike an app activating itself.
+    /// </summary>
+    internal static void BringToFront(Window window, bool activate)
+    {
+        IntPtr d = Connection(), w = Xid(window);
+        if (d == IntPtr.Zero || w == IntPtr.Zero) return;
+        try
+        {
+            if (activate) Send(d, w, "_NET_ACTIVE_WINDOW", new IntPtr(2), IntPtr.Zero, IntPtr.Zero);
+            else Send(d, w, "_NET_RESTACK_WINDOW", new IntPtr(2), IntPtr.Zero, IntPtr.Zero /* Above */);
+            XFlush(d);
+        }
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException) { }
+    }
+
     /// <summary>Before the widget is mapped: ask to be placed on all virtual desktops (EWMH honours this at map time).</summary>
     internal static void PrepareWidget(Window window)
     {

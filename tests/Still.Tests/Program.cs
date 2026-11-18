@@ -209,6 +209,7 @@ Test("calendar: month grid, weeks, strip, week start and week numbers", () =>
     Equal(30, CalendarModel.MonthDays(day).Length); Equal(29, CalendarModel.MonthDays(new DateTime(2028, 2, 3)).Length);
     Equal(47, CalendarModel.WeekNumber(day)); Equal(53, CalendarModel.WeekNumber(new DateTime(2026, 12, 31)));
     Equal("Mo", CalendarModel.DayInitials(DayOfWeek.Monday, en)[0]); Equal("Su", CalendarModel.DayInitials(DayOfWeek.Monday, en)[6]);
+    Equal("Di", CalendarModel.DayInitials(DayOfWeek.Monday, CultureInfo.GetCultureInfo("de-DE"))[1]); Equal("W", CalendarModel.Initial(DayOfWeek.Wednesday, 1, en));
     Equal(DayOfWeek.Sunday, CalendarModel.FirstDay(new Preferences { WeekStart = "Sunday" }, en));
 });
 Test("calendar settings: off by default, kept by presets, normalized", () =>

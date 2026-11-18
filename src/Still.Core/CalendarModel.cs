@@ -36,9 +36,19 @@ public static class CalendarModel
     /// <summary>Short weekday names ("Mo", "Tu"…) starting on <paramref name="first"/>.</summary>
     public static string[] DayInitials(DayOfWeek first, CultureInfo? culture = null)
     {
-        var names = (culture ?? CultureInfo.CurrentCulture).DateTimeFormat.ShortestDayNames;
-        return Enumerable.Range(0, 7).Select(i => names[((int)first + i) % 7]).ToArray();
+        var names = (culture ?? CultureInfo.CurrentCulture).DateTimeFormat.AbbreviatedDayNames;
+        return Enumerable.Range(0, 7).Select(i => Initial(names[((int)first + i) % 7], 2)).ToArray();
     }
+
+    /// <summary>The first letters of a day name ("Mon" → "Mo"). Windows and Linux ship different "shortest" names, so derive them.</summary>
+    public static string Initial(string name, int letters)
+    {
+        name = name.TrimEnd('.');
+        return name.Length <= letters ? name : name[..letters];
+    }
+
+    public static string Initial(DayOfWeek day, int letters, CultureInfo? culture = null) =>
+        Initial((culture ?? CultureInfo.CurrentCulture).DateTimeFormat.AbbreviatedDayNames[(int)day], letters);
 
     public static bool IsWeekend(DateTime day) => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 }

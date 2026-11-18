@@ -467,7 +467,7 @@ public sealed class ClockFace : FrameworkElement
                 break;
             case "Strip":
                 calDays = CalendarModel.MonthDays(today); calColumns = 31; calRows = 1; calCell = calSize * 2.05;
-                calHeads = calDays.Select(d => culture.DateTimeFormat.ShortestDayNames[(int)d.DayOfWeek][..1]).ToArray();
+                calHeads = calDays.Select(d => CalendarModel.Initial(d.DayOfWeek, 1, culture)).ToArray();
                 calTitle = Case(today.ToString("MMMM yyyy", culture), culture);
                 break;
             default:

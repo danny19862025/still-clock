@@ -1,10 +1,11 @@
 # Still
 
-A futuristic, deeply customizable desktop clock for Windows 11.
+A futuristic, deeply customizable desktop clock for Windows 11 and Linux.
 
-Still is an actual borderless WPF desktop widget with a separate settings window
-and notification-area menu. C# / .NET 10 LTS; no web view, server, account,
-telemetry, network calls, plugins, or administrator privileges.
+Still is an actual borderless desktop widget with a separate settings window
+and notification-area (system tray) menu. C# / .NET 10 LTS: WPF on Windows,
+Avalonia on Linux, sharing one core. No web view, server, account, telemetry,
+network calls, plugins, or administrator/root privileges.
 
 | Poster | Signature |
 | --- | --- |
@@ -34,6 +35,45 @@ The installer includes .NET, requires no administrator privileges, and targets I
 The release is unsigned. Checksums are published in **SHA256SUMS.txt** alongside the downloads.
 
 For portable use, extract **Still-win-x64.zip** into a permanent folder and run **Still.exe**. Keep every file together. To update a portable copy, exit Still and replace its files. To remove it, disable launch at sign-in, exit Still and delete its folder.
+
+## Install on Linux
+
+**[Download Still for Linux x64](https://github.com/danny19862025/still-clock/releases/latest/download/Still-linux-x64.tar.gz)** · [All releases](https://github.com/danny19862025/still-clock/releases)
+
+```sh
+tar -xzf Still-linux-x64.tar.gz
+cd Still-linux-x64
+./install.sh
+```
+
+`install.sh` installs for your user only, without root: the app goes to
+`~/.local/opt/still`, a `still` command to `~/.local/bin`, and **Still** appears in
+your application menu. It starts Still when it finishes. Run it again from a newer
+download to upgrade; a running Still is closed (saving its settings) and restarted.
+To remove Still, run `~/.local/opt/still/uninstall.sh` (add `--purge` to also delete
+your settings). You can also run `./still` straight from the extracted folder.
+
+The download is one self-contained executable that includes .NET, so nothing else
+needs installing. It targets Intel/AMD x64. It is tested on Arch Linux with KDE Plasma 6
+(Wayland), and should work on any distribution with a compositing X11 or Wayland
+desktop. Still uses X11 through XWayland on Wayland sessions, which Plasma, GNOME and
+most other desktops provide by default.
+
+Linux notes:
+
+- **Tray icon:** Still uses the standard StatusNotifierItem tray. KDE Plasma shows it
+  out of the box; GNOME needs the *AppIndicator and KStatusNotifierItem Support*
+  extension. Without a tray, launch Still again (from the menu or with `still`): a
+  second launch unlocks the clock, restores interaction and opens Settings.
+- **Fonts:** Inter, Barlow, Kaushan Script and Share Tech Mono are built in. The
+  presets name Windows fonts (Segoe UI, Bahnschrift, Segoe Script, Cascadia Mono); on
+  Linux they are drawn with those built-in equivalents. Any installed font can be picked.
+- **Themes are shared:** *Copy theme* on Windows and *Paste theme* on Linux (or the
+  other way round) carries a look across.
+- Preferences are stored in `~/.config/still/settings.json`. **Launch Still when I
+  log in** adds `~/.config/autostart/still.desktop`.
+- The widget skips the taskbar, pager and Alt+Tab, and asks to appear on every virtual
+  desktop. Transparency needs a compositor (standard on Plasma, GNOME and most others).
 
 ### Everyday controls
 
@@ -201,10 +241,28 @@ the executable. This is optional and does not change saved appearance preference
 Screenshots do not establish native interaction correctness; use the manual
 Windows checklist as well.
 
+### Linux
+
+Use the .NET 10 SDK on Linux x64 or arm64:
+
+```sh
+dotnet run --project src/Still.Linux -c Release          # run from source
+bash scripts/publish-linux.sh linux-x64                   # tests + artifacts/Still-linux-x64.tar.gz
+```
+
+The release workflow builds the Linux package on Ubuntu alongside the Windows
+installer and attaches both to each GitHub release.
+
+`still --capture` saves renders of all twelve presets and Settings to `screenshots/`
+in the current folder. Avalonia's offscreen renderer does not draw the neon glow,
+so captures show presets without it; the glow does appear on the desktop.
+
 ## Source and attribution
 
 `src/Still.Core` is the platform-independent settings/formatting/placement code.
 `src/Still.App` contains the WPF UI, Win32 interaction and tray integration.
+`src/Still.Linux` is the Avalonia port for Linux: the same renderer, settings pages,
+tray menu and behaviour, with X11/XDG integration in `LinuxDesktop.cs`.
 `tests/Still.Tests` runs core regression tests on Linux or Windows.
 
 Inspired by [HTML Clock for Plasma](https://github.com/MarcinOrlowski/html-clock-plasmoid).

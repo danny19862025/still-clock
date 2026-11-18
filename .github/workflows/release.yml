@@ -1,8 +1,8 @@
-name: Windows release
+name: Release
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'installer/**', 'scripts/**', '.github/workflows/release.yml', 'global.json', 'Directory.Build.props']
+    paths: ['src/**', 'tests/**', 'installer/**', 'packaging/**', 'scripts/**', '.github/workflows/release.yml', 'global.json', 'Directory.Build.props']
   workflow_dispatch:
 permissions:
   contents: write
@@ -10,7 +10,26 @@ concurrency:
   group: windows-release
   cancel-in-progress: false
 jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Check Linux and Windows versions match
+        run: |
+          windows=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/Still.App/Still.App.csproj)
+          linux=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/Still.Linux/Still.Linux.csproj)
+          [ "$windows" = "$linux" ] || { echo "Version mismatch: Windows $windows, Linux $linux"; exit 1; }
+      - name: Test, publish and package
+        run: bash scripts/publish-linux.sh linux-x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Still-Linux
+          path: artifacts/Still-linux-x64.tar.gz
   release:
+    needs: linux
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,18 +46,23 @@ jobs:
           if (-not (Test-Path $compiler)) { throw 'Inno Setup compiler is missing from the runner.' }
           [xml]$project = Get-Content src/Still.App/Still.App.csproj
           ./scripts/build-installer.ps1 -Compiler $compiler -Version ([string]$project.Project.PropertyGroup.Version)
+      - uses: actions/download-artifact@v4
+        with:
+          name: Still-Linux
+          path: artifacts
       - name: Write release checksums
         shell: pwsh
         run: |
-          Get-FileHash artifacts/Still-Setup-win-x64.exe,artifacts/Still-win-x64.zip -Algorithm SHA256 |
+          Get-FileHash artifacts/Still-Setup-win-x64.exe,artifacts/Still-win-x64.zip,artifacts/Still-linux-x64.tar.gz -Algorithm SHA256 |
             ForEach-Object { "$($_.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($_.Path))" } |
             Set-Content artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Still-Windows
+          name: Still-Release
           path: |
             artifacts/Still-Setup-win-x64.exe
             artifacts/Still-win-x64.zip
+            artifacts/Still-linux-x64.tar.gz
             artifacts/SHA256SUMS.txt
       - name: Publish GitHub release
         if: github.event_name == 'workflow_dispatch'
@@ -51,5 +75,5 @@ jobs:
           $tag = "v$version"
           gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) { throw "Release $tag already exists. Bump the app version before publishing." }
-          gh release create $tag artifacts/Still-Setup-win-x64.exe artifacts/Still-win-x64.zip artifacts/SHA256SUMS.txt --target $env:GITHUB_SHA --title "Still $version" --notes-file docs/RELEASE-NOTES.md --repo $env:GITHUB_REPOSITORY
+          gh release create $tag artifacts/Still-Setup-win-x64.exe artifacts/Still-win-x64.zip artifacts/Still-linux-x64.tar.gz artifacts/SHA256SUMS.txt --target $env:GITHUB_SHA --title "Still $version" --notes-file docs/RELEASE-NOTES.md --repo $env:GITHUB_REPOSITORY
           if ($LASTEXITCODE -ne 0) { throw 'Release publishing failed.' }

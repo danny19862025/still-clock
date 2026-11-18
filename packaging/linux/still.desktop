@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Still
+GenericName=Desktop Clock
+Comment=A futuristic, customizable desktop clock
+Exec="@EXEC@"
+Icon=still
+Terminal=false
+Categories=Utility;Clock;
+Keywords=clock;time;date;widget;desktop;
+StartupWMClass=still
+SingleMainWindow=true

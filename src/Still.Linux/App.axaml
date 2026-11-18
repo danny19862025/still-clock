@@ -1,0 +1,24 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Still.Linux.ClockApplication" RequestedThemeVariant="Dark" Name="Still">
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#00E5FF" RegionColor="#05080F" AltHigh="#05080F" BaseHigh="#E6F7FF"
+                               ChromeMediumLow="#0A1220" ChromeLow="#0A1220" ChromeMedium="#0D2B3D" ListLow="#0D2B3D" ListMedium="#12364C" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+    <Style Selector="Window"><Setter Property="FontFamily" Value="fonts:Inter#Inter"/><Setter Property="FontSize" Value="14"/><Setter Property="Foreground" Value="#E6F7FF"/></Style>
+    <Style Selector="Button"><Setter Property="Background" Value="#0A1220"/><Setter Property="BorderBrush" Value="#1D3448"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="16,9"/><Setter Property="Foreground" Value="#E6F7FF"/><Setter Property="Cursor" Value="Hand"/></Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#0D2B3D"/><Setter Property="BorderBrush" Value="#2A5470"/></Style>
+    <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="BorderBrush" Value="#00E5FF"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#00E5FF"/><Setter Property="Foreground" Value="#000000"/><Setter Property="BorderBrush" Value="#00E5FF"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="#7FF2FF"/><Setter Property="Foreground" Value="#000000"/></Style>
+    <Style Selector="ComboBox"><Setter Property="MinHeight" Value="38"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="Background" Value="#0A1220"/><Setter Property="BorderBrush" Value="#1D3448"/><Setter Property="MaxDropDownHeight" Value="320"/></Style>
+    <Style Selector="TextBox"><Setter Property="Background" Value="#0A1220"/><Setter Property="BorderBrush" Value="#1D3448"/></Style>
+    <Style Selector="Label"><Setter Property="Foreground" Value="#E6F7FF"/><Setter Property="Padding" Value="0,0,0,6"/></Style>
+    <Style Selector="Slider"><Setter Property="Margin" Value="0,-4,0,0"/></Style>
+    <Style Selector="ColorPicker"><Setter Property="HorizontalAlignment" Value="Stretch"/></Style>
+    <Style Selector="Expander"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="Background" Value="#080F1A"/></Style>
+  </Application.Styles>
+</Application>

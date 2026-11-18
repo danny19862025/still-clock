@@ -1,3 +1,29 @@
+## Version 2.3.0 Linux validation
+
+Build host: Arch Linux x64, KDE Plasma 6 on Wayland (Still runs through XWayland), one
+1920×1200 display at 100%, .NET SDK 10.0.404, Avalonia 11.3.23.
+
+- `src/Still.Linux` builds with 0 warnings and 0 errors. All 32 core regression tests passed.
+- `scripts/publish-linux.sh` produced the self-contained single-file `Still-linux-x64.tar.gz`.
+  The extracted executable ran with no .NET installed, and `--version` and `--verify` worked.
+- `still --verify` renders of all twelve presets and Settings were compared side by side
+  with the Windows renders in `docs/images`: layout, fonts, fades, gradients, frames,
+  indicators and scanlines match. The offscreen renderer omits the glow by design.
+- On the live desktop: transparent borderless widget at the saved position; neon glow drawn;
+  tray icon registered with the StatusNotifierWatcher; widget flagged skip-taskbar,
+  skip-pager and skip-switcher; locked click-through empties the X11 input region and
+  unlock restores it; a second launch unlocks, restores input and opens Settings, then
+  exits; SIGTERM saves settings and removes the instance socket.
+- `install.sh` and `uninstall.sh` ran in a sandboxed home. The desktop entry passed
+  `desktop-file-validate`, and uninstall removed every installed file.
+- Fixed during porting: Avalonia drawing-context opacity masks mis-scale later drawing on
+  HiDPI renders, so fades use a masked layer. Avalonia draws each text run in its own
+  coordinate space, so text gradients are shifted per glyph.
+- Not exercised: clicking through the tray menu and Settings controls by hand, drag and the
+  scale grip, the login autostart entry at a real login, multiple monitors or HiDPI
+  scaling, "on every virtual desktop" (this host has one desktop), GNOME and other
+  desktops, a native Wayland backend (Avalonia 11 uses XWayland), and linux-arm64.
+
 ## Version 2.3.0 Windows validation
 
 - Windows 11 Release build succeeded. All 32 core regression tests passed, including the new Overlay/Arc preset and ordinal-date tests.

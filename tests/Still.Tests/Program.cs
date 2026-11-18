@@ -188,6 +188,14 @@ Test("typed hex colours: with or without #, short form, any case", () =>
     foreach (string bad in new[] { "", "#", "#12345", "#1234567", "#GG0000", "red", "#12 34 56", null! }) Equal<string?>(null, Preferences.ParseHexColor(bad));
     True(Preferences.IsColor(Preferences.ParseHexColor("abc")));
 });
+Test("split preset: bold accent hour layout on a flat panel", () =>
+{
+    var split = new Preferences(); split.ApplyPreset("Split"); split.Normalize();
+    Equal("Split", split.Layout); Equal("Solid", split.Background); Equal("#FF006E", split.AccentColor);
+    True(split.Seconds && split.Date && !split.Weekday);
+    split.ApplyPreset("Neon"); Equal("Classic", split.Layout);
+    var odd = new Preferences { Layout = "Split" }; odd.Normalize(); Equal("Split", odd.Layout);
+});
 Test("date styles", () =>
 {
     var d = new Preferences { WeekdayStyle = "Short", DateStyle = "ISO" };

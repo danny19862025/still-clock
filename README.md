@@ -12,6 +12,8 @@ network calls, plugins, or administrator/root privileges.
 | ![Poster preset](docs/images/preset-poster.png) | ![Signature preset](docs/images/preset-signature.png) |
 | **Midnight** | **Arc** |
 | ![Midnight preset](docs/images/preset-midnight.png) | ![Arc preset](docs/images/preset-arc.png) |
+| **Split** (Linux render) | |
+| ![Split preset](docs/images/preset-split.png) | |
 | **Neon** | **HUD** |
 | ![Neon preset](docs/images/preset-neon.png) | ![HUD preset](docs/images/preset-hud.png) |
 | **Holo** | **Terminal** |
@@ -79,19 +81,20 @@ Linux notes:
 
 Settings has four pages (**Ctrl+1–4**):
 
-- **01 Theme:** a live gallery of all twelve presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
-- **02 Style:** layout (Classic, Poster, Script, Overlay or Arc), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **01 Theme:** a live gallery of all thirteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
+- **02 Style:** layout (Classic, Poster, Script, Overlay, Arc or Split), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
 - **Notification-area clock icon:** settings, show/hide, unlock and exit. Windows may put the icon under the up arrow.
 
-### Twelve starting points
+### Thirteen starting points
 
 - **Neon** (default): thin glowing digits, a sweeping seconds bar, a blinking colon and an ISO date.
 - **Poster:** an editorial layout. A huge lavender day number fades out towards its base, the bold month runs across it, the time and a fine underline sit beneath, and the weekday runs up the side.
 - **Signature:** the Script layout. A tall, narrow white day number, the month running up its side, a blue handwritten weekday sweeping across it, and a bold time beneath.
 - **Midnight:** the Overlay layout. A big see-through condensed time, a white handwritten weekday across it, and a condensed ordinal date such as 27TH FEBRUARY 2026.
 - **Arc:** hours stacked over fading minutes, a glowing teal arc across them and a small date such as 17 Tue Sep. Turn on a seconds indicator and the arc sweeps with the seconds.
+- **Split:** a flat translucent panel with a bold hot-pink hour, a dim colon, white minutes with small raised seconds and a compact `2026-NOV-18` date.
 - **Neon Poster:** the Poster layout in hot magenta with glow, and a seconds bar in place of the underline.
 - **HUD:** a scanlined instrument panel with corner brackets, a `SYS.CHRONO` caption, a UTC offset tag and segmented seconds.
 - **Holo:** magenta-to-cyan gradient digits in an outlined glass card with a dotted seconds track.
@@ -236,7 +239,7 @@ settings round-trips/recovery/write failures and off-screen/mixed-DPI restoratio
 See [verification](docs/VERIFICATION.md) for exact verified and unverified scope.
 
 On Windows, run `Still.exe --capture` from a writable release folder to export
-**actual WPF renders** of all twelve presets and settings into `screenshots/` beside
+**actual WPF renders** of all thirteen presets and settings into `screenshots/` beside
 the executable. This is optional and does not change saved appearance preferences.
 Screenshots do not establish native interaction correctness; use the manual
 Windows checklist as well.
@@ -253,7 +256,7 @@ bash scripts/publish-linux.sh linux-x64                   # tests + artifacts/St
 The release workflow builds the Linux package on Ubuntu alongside the Windows
 installer and attaches both to each GitHub release.
 
-`still --capture` saves renders of all twelve presets and Settings to `screenshots/`
+`still --capture` saves renders of all thirteen presets and Settings to `screenshots/`
 in the current folder. Avalonia's offscreen renderer does not draw the neon glow,
 so captures show presets without it; the glow does appear on the desktop.
 

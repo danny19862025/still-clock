@@ -61,7 +61,12 @@ public sealed class ClockFace : FrameworkElement
         scriptLayout = p.Layout == "Script" && !p.Advanced;
         overlayLayout = p.Layout == "Overlay" && !p.Advanced;
         arcLayout = p.Layout == "Arc" && !p.Advanced;
-        if (overlayLayout)
+        splitLayout = p.Layout == "Split" && !p.Advanced;
+        if (splitLayout)
+        {
+            y = LayoutSplit(y, culture);
+        }
+        else if (overlayLayout)
         {
             y = LayoutOverlay(y, culture);
         }
@@ -358,6 +363,82 @@ public sealed class ClockFace : FrameworkElement
     }
 
     // ---- Arc layout: hours stacked over minutes, a glowing arc across the minutes, a small date ----
+    // ---- Split layout: a bold accent hour, a dim colon, minutes with superscript seconds, and a compact date beneath ----
+    private bool splitLayout;
+    private Typeface splitBold = new("Segoe UI");
+    private string xHour = "", xMinute = "", xSeconds = "", xAmPm = "", xDate = "";
+    private double xY, xSize, xTop, xH, xBoldTop, xHourCell, xX, xColonW, xMinX, xSuffixX, xSecSize, xSecY, xAmY, xDateSize, xDateExtra, xDateY, xCenter, xTimeW, xIndicatorY;
+
+    private string SplitDate(DateTime d, CultureInfo culture) =>
+        Case((p.Weekday ? d.ToString("ddd", culture) + "  " : "") + d.ToString("yyyy-MMM-dd", culture), culture);
+
+    private double LayoutSplit(double y, CultureInfo culture)
+    {
+        y += mainSize * .1;
+        xY = y;
+        xSize = mainSize * .66;
+        splitBold = new Typeface(new FontFamily(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        (xTop, xH) = Ink("8", xSize);
+        var boldInk = Text("8", xSize, Brushes.White, splitBold).BuildGeometry(new Point(0, 0)).Bounds;
+        xBoldTop = boldInk.IsEmpty ? 0 : boldInk.Top;
+        xHour = now.ToString(p.Hour24 ? "HH" : "hh", culture);
+        xMinute = now.ToString("mm", culture);
+        xHourCell = "0123456789".Max(c => Text(c.ToString(), xSize, Brushes.White, splitBold).WidthIncludingTrailingWhitespace);
+        xColonW = Advance(':', xSize * .7) + xSize * .16;
+        double minW = StableWidth("88", xSize);
+
+        xSecSize = mainSize * .25;
+        xSeconds = p.Seconds ? now.ToString("ss", culture) : "";
+        xAmPm = !p.Hour24 && p.AmPm ? now.ToString("tt", culture).ToUpper(culture) : "";
+        string am = culture.DateTimeFormat.AMDesignator.ToUpper(culture), pm = culture.DateTimeFormat.PMDesignator.ToUpper(culture);
+        double suffixW = Math.Max(p.Seconds ? StableWidth("88", xSecSize) : 0, xAmPm.Length > 0 ? Math.Max(StableWidth(am, xSecSize), StableWidth(pm, xSecSize)) : 0);
+        double gap = suffixW > 0 ? xSize * .02 : 0;
+        xTimeW = xHourCell * 2 + xColonW + minW + gap + suffixW;
+
+        xDateSize = mainSize * .3; xDateExtra = p.Uppercase ? -Tracking(xDateSize) + p.LetterSpacing * xDateSize / 80 : 0;
+        xDate = p.Date ? SplitDate(now, culture) : "";
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).SelectMany(m => Enumerable.Range(22, 7).Select(d => new DateTime(2026, m, d))).Max(d => StableWidth(SplitDate(d, culture), xDateSize, xDateExtra)) : 0;
+        var (dateTop, dateH) = Ink("8", xDateSize);
+        double dateCap = y + xH + mainSize * .26;
+        xDateY = dateCap - dateTop;
+        double bottom = (p.Date ? dateCap + dateH : y + xH) + mainSize * .16;
+
+        // Generous side margins give a wide, quiet panel.
+        double width = Math.Max(xTimeW, dateReserve) + mainSize * 1.9;
+        xCenter = padding + width / 2;
+        xX = xCenter - xTimeW / 2;
+        xMinX = xX + xHourCell * 2 + xColonW;
+        xSuffixX = xMinX + minW + gap;
+        var (secTop, secH) = Ink("8", xSecSize);
+        xSecY = y - secTop - xSize * .05;          // superscript, level with the top of the digits
+        xAmY = y + xH - secH - secTop;             // AM/PM sits on the baseline
+        xIndicatorY = bottom;
+        bodyWidth = Math.Max(bodyWidth, width);
+        return p.SecondsIndicator != "None" ? xIndicatorY + 8 * p.Scale : bottom;
+    }
+
+    private void RenderSplit(DrawingContext dc, Color text, Color accent, Brush inkBrush, Brush? dim)
+    {
+        double x = xX;
+        var hourBrush = Frozen(new SolidColorBrush(accent));
+        foreach (char c in xHour)
+        {
+            var glyph = Text(c.ToString(), xSize, hourBrush, splitBold);
+            dc.DrawText(glyph, new Point(x + (xHourCell - glyph.WidthIncludingTrailingWhitespace) / 2, xY - xBoldTop));
+            x += xHourCell;
+        }
+        // A smaller, dim colon centred on the digits.
+        double colonSize = xSize * .7;
+        var (colonTop, colonH) = Ink(":", colonSize);
+        var colon = Glyph(":", colonSize, dim ?? Frozen(new SolidColorBrush(Alpha(text, .45))));
+        dc.DrawText(colon, new Point(x + (xColonW - colon.WidthIncludingTrailingWhitespace) / 2, xY + xH / 2 - colonH / 2 - colonTop + xH * .08));
+        DrawStable(dc, xMinute, xSize, inkBrush, xMinX, xY - xTop);
+        if (xSeconds.Length > 0) DrawStable(dc, xSeconds, xSecSize, Frozen(new SolidColorBrush(Alpha(text, .9))), xSuffixX, xSecY);
+        if (xAmPm.Length > 0) DrawStable(dc, xAmPm, xSecSize, Frozen(new SolidColorBrush(accent)), xSuffixX, xAmY);
+        if (xDate.Length > 0) DrawStable(dc, xDate, xDateSize, Frozen(new SolidColorBrush(Alpha(text, .94))), xCenter - StableWidth(xDate, xDateSize, xDateExtra) / 2, xDateY, extra: xDateExtra);
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, xX, xTimeW, xIndicatorY);
+    }
+
     private bool arcLayout;
     private string aHour = "", aMinute = "", aDate = "";
     private double aSize, aTop, aH, aX, aW, aHourY, aMinY, aCx, aCy, aRx, aRy, aDateSize, aDateY;
@@ -577,6 +658,7 @@ public sealed class ClockFace : FrameworkElement
             if (scriptLayout) RenderScript(dc, text, accent, inkBrush);
             if (overlayLayout) RenderOverlay(dc, text, accent, dim);
             if (arcLayout) RenderArc(dc, text, accent, inkBrush, dim);
+            if (splitLayout) RenderSplit(dc, text, accent, inkBrush, dim);
         }
         ink.Effect = p.Glow ? new DropShadowEffect { Color = accent, ShadowDepth = 0, BlurRadius = GlowRadius(), Opacity = .45 + .55 * p.GlowStrength, RenderingBias = RenderingBias.Quality } : null;
 

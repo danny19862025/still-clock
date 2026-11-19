@@ -298,4 +298,17 @@ Test("checksum listing lookup", () =>
     Equal<string?>(null, UpdateChecker.ExpectedHash(sums, "missing.exe"));
     Equal<string?>(null, UpdateChecker.ExpectedHash("nothex  Still-Setup-win-x64.exe", "Still-Setup-win-x64.exe"));
 });
+Test("overlay and arc time includes enabled seconds and AM/PM", () =>
+{
+    var time = new DateTime(2026, 11, 19, 20, 30, 45);
+    var options = new Preferences { Hour24 = false, Seconds = true, AmPm = true };
+    Equal("8:30:45 PM", TemplateFormatter.CompactTime(time, options, en));
+    Equal(("08 PM", "30:45"), TemplateFormatter.StackedTime(time, options, en));
+    options.Hour24 = true;
+    Equal(("20", "30:45"), TemplateFormatter.StackedTime(time, options, en));
+    options.Seconds = false;
+    Equal(("20", "30"), TemplateFormatter.StackedTime(time, options, en));
+    options.Hour24 = false; options.AmPm = false;
+    Equal(("08", "30"), TemplateFormatter.StackedTime(time, options, en));
+});
 Console.WriteLine($"{count} tests passed.");

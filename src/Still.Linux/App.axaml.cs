@@ -140,6 +140,7 @@ public partial class ClockApplication : Application
             about = new AboutWindow(checkForUpdates);
             about.Closed += (_, _) => about = null;
         }
+        else if (checkForUpdates) _ = about.CheckAsync();
         about.Show(); about.Activate();
         FrontSoon(about, true);
     }

@@ -308,8 +308,14 @@ public sealed class ClockFace : FrameworkElement
         oY = y;
         oSize = mainSize * 1.7; oExtra = -oSize * .02;
         (oTop, oH) = Ink("8", oSize);
-        oTime = now.ToString(p.Hour24 ? "HH:mm" : "hh:mm", culture);
-        oW = StableWidth("88:88", oSize, oExtra) * cond;
+        oTime = TemplateFormatter.CompactTime(now, p, culture);
+        string timeField = "88:88" + (p.Seconds ? ":88" : "");
+        if (!p.Hour24 && p.AmPm)
+        {
+            string am = culture.DateTimeFormat.AMDesignator, pm = culture.DateTimeFormat.PMDesignator;
+            timeField += " " + (StableWidth(am, oSize, oExtra) > StableWidth(pm, oSize, oExtra) ? am : pm).ToUpper(culture);
+        }
+        oW = Math.Max(StableWidth(timeField, oSize, oExtra), StableWidth(oTime, oSize, oExtra)) * cond;
 
         double scriptSize = mainSize * .66;
         oWeekday = p.Weekday ? Text(now.ToString("dddd", culture), scriptSize, Brushes.White, scriptFace) : null;
@@ -560,9 +566,14 @@ public sealed class ClockFace : FrameworkElement
     {
         aSize = mainSize * 1.9;
         (aTop, aH) = Ink("8", aSize);
-        aHour = now.ToString(p.Hour24 ? "HH" : "hh", culture);
-        aMinute = now.ToString("mm", culture);
-        aW = StableWidth("88", aSize);
+        (aHour, aMinute) = TemplateFormatter.StackedTime(now, p, culture);
+        string hourField = "88";
+        if (!p.Hour24 && p.AmPm)
+        {
+            string am = culture.DateTimeFormat.AMDesignator, pm = culture.DateTimeFormat.PMDesignator;
+            hourField += " " + (StableWidth(am, aSize) > StableWidth(pm, aSize) ? am : pm).ToUpper(culture);
+        }
+        aW = Math.Max(StableWidth(hourField, aSize), StableWidth(p.Seconds ? "88:88" : "88", aSize));
         double gap = mainSize * .32;
         aHourY = y; aMinY = y + aH + gap;
 

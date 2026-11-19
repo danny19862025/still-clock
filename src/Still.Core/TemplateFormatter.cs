@@ -85,6 +85,15 @@ public static class TemplateFormatter
         return text;
     }
 
+    /// <summary>Hour and minute lines for the stacked Arc layout.</summary>
+    public static (string Hour, string Minute) StackedTime(DateTime time, Preferences p, CultureInfo? culture = null)
+    {
+        culture ??= CultureInfo.CurrentCulture;
+        string hour = time.ToString(p.Hour24 ? "HH" : "hh", culture);
+        if (!p.Hour24 && p.AmPm) hour += " " + time.ToString("tt", culture).ToUpper(culture);
+        return (hour, time.ToString(p.Seconds ? "mm:ss" : "mm", culture));
+    }
+
     /// <summary>"27th February 2026" in English (ordinal day); "d MMMM yyyy" in other languages.</summary>
     public static string OrdinalDate(DateTime time, CultureInfo? culture = null)
     {

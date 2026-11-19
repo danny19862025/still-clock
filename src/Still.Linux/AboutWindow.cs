@@ -107,8 +107,9 @@ public sealed class AboutWindow : Window
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { }
     }
 
-    private async Task CheckAsync()
+    internal async Task CheckAsync()
     {
+        if (busy != null && !check.IsEnabled) return;
         busy?.Cancel(); busy = new CancellationTokenSource();
         check.IsEnabled = false; download.IsVisible = false; latest = null;
         SetStatus("Checking GitHub for the latest release…", false);

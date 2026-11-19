@@ -89,6 +89,7 @@ public partial class ClockApplication : Application
             about.Closed += (_, _) => about = null;
             if (settings?.IsVisible == true) about.Owner = settings;
         }
+        else if (checkForUpdates) _ = about.CheckAsync();
         about.Show(); about.Activate();
     }
 

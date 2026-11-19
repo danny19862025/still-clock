@@ -26,9 +26,7 @@ if [ ! -f "$here/still" ]; then
 fi
 
 # Close a running copy so it saves its settings; it is started again below.
-was_running=0
 if pgrep -u "$(id -u)" -x still >/dev/null 2>&1; then
-    was_running=1
     pkill -TERM -u "$(id -u)" -x still || true
     for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -u "$(id -u)" -x still >/dev/null 2>&1 || break; sleep 0.3; done
 fi
@@ -61,7 +59,7 @@ if [ "$autostart" = 1 ]; then echo "It starts when you log in (turn this off in 
 echo "Open it from your application menu, or run: still"
 case ":$PATH:" in *":$bin:"*) ;; *) echo "(Add $bin to your PATH to run 'still' from a terminal.)";; esac
 
-if [ "$start" = 1 ] || [ "$was_running" = 1 ]; then
+if [ "$start" = 1 ]; then
     if command -v setsid >/dev/null 2>&1; then setsid -f "$app/still" >/dev/null 2>&1 < /dev/null
     else nohup "$app/still" >/dev/null 2>&1 < /dev/null & fi
 fi

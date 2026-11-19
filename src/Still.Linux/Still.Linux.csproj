@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework>
     <AssemblyName>still</AssemblyName><RootNamespace>Still.Linux</RootNamespace>
-    <Version>2.5.0</Version><Description>A futuristic, customizable clock for your desktop</Description>
+    <Version>2.5.1</Version><Description>A futuristic, customizable clock for your desktop</Description>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
     <InvariantGlobalization>false</InvariantGlobalization>

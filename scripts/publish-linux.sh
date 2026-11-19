@@ -10,6 +10,8 @@ cd "$root"
 dotnet=${DOTNET:-dotnet}
 [ -x "$root/.dotnet/dotnet" ] && [ -z "${DOTNET:-}" ] && dotnet="$root/.dotnet/dotnet"
 
+python3 tests/install_no_start.py
+
 "$dotnet" build tests/Still.Tests -c Release --disable-build-servers -m:1
 "$dotnet" tests/Still.Tests/bin/Release/net10.0/Still.Tests.dll
 

@@ -1,8 +1,6 @@
-Still 2.5.1 fixes clock display options, update checks and Linux installation.
+Still 2.5.2 fixes the clock freezing at login.
 
-- Overlay (Midnight) and Arc now show seconds and AM/PM when enabled, with space reserved for the additional text.
-- The tray's Check for updates action now checks even when About is already open.
-- The Linux installer respects --no-start when upgrading a running copy.
+- The clock now keeps time from the moment it starts. Previously, when Still launched at login without opening Settings, it stayed on the login time until it was clicked.
 
 Existing preferences are preserved.
 

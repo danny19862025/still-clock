@@ -41,6 +41,7 @@ public partial class ClockApplication : Application
         Clock = new ClockWindow(this); MainWindow = Clock;
         CreateTray();
         Apply(); Clock.Show();
+        RefreshTime(); // Apply() ran before the window was visible, so start the tick now.
         SystemEvents.TimeChanged += SystemTimeChanged;
         SystemEvents.PowerModeChanged += PowerChanged;
         SystemEvents.DisplaySettingsChanged += DisplaysChanged;

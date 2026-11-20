@@ -55,6 +55,7 @@ public partial class ClockApplication : Application
         Clock = new ClockWindow(this);
         CreateTray();
         Apply(); Clock.ShowClock();
+        RefreshTime(); // Apply() ran before the window was visible, so start the tick now.
         Clock.Screens.Changed += (_, _) => Dispatcher.UIThread.Post(() => { Clock.RestorePosition(); RefreshTime(); });
         WatchTimeZone();
         lifetime.ShutdownRequested += (_, _) => { if (!exiting) { exiting = true; Clock.CapturePosition(); Store.Save(Preferences); } };

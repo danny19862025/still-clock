@@ -5,8 +5,8 @@ namespace Still.Core;
 
 public sealed class Preferences
 {
-    public static readonly string[] Presets = ["Neon", "Split", "Poster", "Signature", "Midnight", "Arc", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
-    public static readonly string[] Layouts = ["Classic", "Poster", "Script", "Overlay", "Arc", "Split"];
+    public static readonly string[] Presets = ["Neon", "Spaced", "Split", "Poster", "Signature", "Midnight", "Arc", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Layouts = ["Classic", "Poster", "Script", "Overlay", "Arc", "Split", "Spaced"];
     public static readonly string[] Weights = ["Thin", "Light", "Regular", "SemiBold", "Bold"];
     public static readonly string[] Frames = ["None", "Brackets", "Outline"];
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
@@ -111,6 +111,11 @@ public sealed class Preferences
         ScriptFont = "Segoe Script"; Condense = .6;
         switch (preset)
         {
+            case "Spaced":
+                // A wide, letter-spaced weekday over the date and a dashed time line, all centred.
+                Layout = "Spaced"; Font = "Bahnschrift"; FontWeight = "SemiBold"; TextColor = "#F6F2FF"; AccentColor = "#FFC2E2";
+                Glow = true; GlowStrength = .3; Seconds = true; Fade = false; Alignment = "Center";
+                break;
             case "Split":
                 // A flat translucent panel: bold accent hour, white minutes with superscript seconds, 2026-NOV-18 beneath.
                 Layout = "Split"; FontWeight = "Regular"; TextColor = "#FFFFFF"; AccentColor = "#FF006E";

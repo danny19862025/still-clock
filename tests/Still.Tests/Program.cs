@@ -311,4 +311,13 @@ Test("overlay and arc time includes enabled seconds and AM/PM", () =>
     options.Hour24 = false; options.AmPm = false;
     Equal(("08", "30"), TemplateFormatter.StackedTime(time, options, en));
 });
+Test("spaced layout: preset and regional full date", () =>
+{
+    var look = new Preferences(); look.ApplyPreset("Spaced");
+    Equal("Spaced", look.Layout); True(look.Seconds); look.Normalize(); Equal("Spaced", look.Layout);
+    var day = new DateTime(2026, 9, 28);
+    Equal("September 28, 2026", TemplateFormatter.FullDate(day, CultureInfo.GetCultureInfo("en-US")));
+    Equal("28 September 2026", TemplateFormatter.FullDate(day, en));
+    Equal("28 September 2026", TemplateFormatter.FullDate(day, CultureInfo.GetCultureInfo("de-DE")));
+});
 Console.WriteLine($"{count} tests passed.");

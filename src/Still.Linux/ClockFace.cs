@@ -72,8 +72,10 @@ public sealed class ClockFace : Panel
         scriptLayout = p.Layout == "Script" && !p.Advanced;
         overlayLayout = p.Layout == "Overlay" && !p.Advanced;
         splitLayout = p.Layout == "Split" && !p.Advanced;
+        spacedLayout = p.Layout == "Spaced" && !p.Advanced;
         arcLayout = p.Layout == "Arc" && !p.Advanced;
-        if (splitLayout) y = LayoutSplit(y, culture);
+        if (spacedLayout) y = LayoutSpaced(y, culture);
+        else if (splitLayout) y = LayoutSplit(y, culture);
         else if (overlayLayout) y = LayoutOverlay(y, culture);
         else if (arcLayout) y = LayoutArc(y, culture);
         else if (poster) y = LayoutPoster(y, culture);
@@ -465,6 +467,63 @@ public sealed class ClockFace : Panel
         if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, xX, xTimeW, xIndicatorY);
     }
 
+    // ---- Spaced layout: a wide, letter-spaced weekday, the full date, and "—  3:56:23 PM  —" beneath ----
+    private bool spacedLayout;
+    private const double SpacedStretch = 1.18; // the weekday is widened for an extended, display-face look
+    private string wDay = "", wDate = "", wTime = "";
+    private double wY, wDaySize, wDayExtra, wDayTop, wDayH, wDateSize, wDateExtra, wDateY, wTimeSize, wTimeExtra, wTimeY, wTimeMid, wDash, wCenter, wWidth, wIndicatorY;
+
+    private double LayoutSpaced(double y, CultureInfo culture)
+    {
+        wY = y;
+        wDaySize = mainSize * .62; wDayExtra = wDaySize * .2;
+        (wDayTop, wDayH) = Ink("M", wDaySize);
+        wDay = p.Weekday ? Case(now.ToString("dddd", culture), culture) : "";
+        double dayReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => StableWidth(Case(d, culture), wDaySize, wDayExtra)) * SpacedStretch : 0;
+
+        wDateSize = mainSize * .2; wDateExtra = wDateSize * .18;
+        wDate = p.Date ? Case(TemplateFormatter.FullDate(now, culture), culture) : "";
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => StableWidth(Case(TemplateFormatter.FullDate(d, culture), culture), wDateSize, wDateExtra)) : 0;
+        var (dateTop, dateH) = Ink("8", wDateSize);
+        double dateCap = (p.Weekday ? y + wDayH : y) + mainSize * .2;
+        wDateY = dateCap - dateTop;
+
+        wTimeSize = mainSize * .17; wTimeExtra = wTimeSize * .16;
+        wTime = TemplateFormatter.CompactTime(now, p, culture).ToUpper(culture);
+        double timeReserve = StableWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).ToUpper(culture).Replace('2', '8'), wTimeSize, wTimeExtra);
+        wDash = wTimeSize * 1.1;
+        var (timeTop, timeH) = Ink("8", wTimeSize);
+        double timeCap = (p.Date ? dateCap + dateH : dateCap) + mainSize * .17;
+        wTimeY = timeCap - timeTop;
+        wTimeMid = timeCap + timeH / 2;
+        double bottom = timeCap + timeH;
+        wIndicatorY = bottom + mainSize * .14;
+
+        wWidth = Math.Max(dayReserve, Math.Max(dateReserve, timeReserve + wDash * 2 + wTimeSize * 1.6));
+        wCenter = padding + wWidth / 2;
+        bodyWidth = Math.Max(bodyWidth, wWidth);
+        return p.SecondsIndicator != "None" ? wIndicatorY + 8 * p.Scale : bottom;
+    }
+
+    private void RenderSpaced(DrawingContext dc, Color text, Color accent, IBrush inkBrush, IBrush? dim)
+    {
+        if (wDay.Length > 0)
+        {
+            double w = StableWidth(wDay, wDaySize, wDayExtra) * SpacedStretch, x = wCenter - w / 2;
+            using (dc.PushTransform(ScaleX(SpacedStretch, x, 0)))
+                DrawStable(dc, wDay, wDaySize, inkBrush, x, wY - wDayTop, extra: wDayExtra);
+        }
+        if (wDate.Length > 0)
+            DrawStable(dc, wDate, wDateSize, Solid(Alpha(text, .9)), wCenter - StableWidth(wDate, wDateSize, wDateExtra) / 2, wDateY, extra: wDateExtra);
+        // The time sits between two short rules: "—  3:56:23 PM  —".
+        double tw = StableWidth(wTime, wTimeSize, wTimeExtra), tx = wCenter - tw / 2, gap = wTimeSize * .8;
+        DrawStable(dc, wTime, wTimeSize, Solid(Alpha(text, .78)), tx, wTimeY, dim, wTimeExtra);
+        var rule = new Pen(Solid(Alpha(accent, .75)), Math.Max(1, 1.2 * p.Scale));
+        dc.DrawLine(rule, new Point(tx - gap - wDash, wTimeMid), new Point(tx - gap, wTimeMid));
+        dc.DrawLine(rule, new Point(tx + tw + gap, wTimeMid), new Point(tx + tw + gap + wDash, wTimeMid));
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, wCenter - wWidth * .35, wWidth * .7, wIndicatorY);
+    }
+
     // ---- Optional calendar: Month grid, Week row or a Strip of the month, below or to the right of the clock ----
     private bool calendarOn;
     private DateTime[] calDays = [];
@@ -811,6 +870,7 @@ public sealed class ClockFace : Panel
         if (overlayLayout) RenderOverlayLayout(dc, text, accent, dim);
         if (arcLayout) RenderArc(dc, accent, inkBrush);
         if (splitLayout) RenderSplit(dc, text, accent, inkBrush, dim);
+        if (spacedLayout) RenderSpaced(dc, text, accent, inkBrush, dim);
     }
 
     private void RenderOverlay(DrawingContext dc)

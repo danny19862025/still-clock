@@ -469,30 +469,62 @@ public sealed class ClockFace : Panel
 
     // ---- Spaced layout: a wide, letter-spaced weekday, the full date, and "—  3:56:23 PM  —" beneath ----
     private bool spacedLayout;
-    private const double SpacedStretch = 1.18; // the weekday is widened for an extended, display-face look
+    private double SpacedStretch = 1; // narrow faces (Bahnschrift/Barlow) are widened for an extended, display-face look
     private string wDay = "", wDate = "", wTime = "";
     private double wY, wDaySize, wDayExtra, wDayTop, wDayH, wDateSize, wDateExtra, wDateY, wTimeSize, wTimeExtra, wTimeY, wTimeMid, wDash, wCenter, wWidth, wIndicatorY;
+
+    // The date and time lines use the "small text" font (DetailFont), measured separately from the main face.
+    private Typeface detailFace;
+    private string detailKey = "";
+    private readonly Dictionary<(char, double), double> detailWidths = [];
+    private double DetailGlyph(char c, double size)
+    {
+        if (!detailWidths.TryGetValue((c, size), out double w))
+            detailWidths[(c, size)] = w = Text(c.ToString(), size, Brushes.White, detailFace).WidthIncludingTrailingWhitespace;
+        return w;
+    }
+    private double DetailAdvance(char c, double size, double extra) =>
+        (char.IsAsciiDigit(c) ? "0123456789".Max(d => DetailGlyph(d, size)) : DetailGlyph(c, size)) + Tracking(size) + extra;
+    private double DetailWidth(string s, double size, double extra) => s.Length == 0 ? 0 : s.Sum(c => DetailAdvance(c, size, extra)) - Tracking(size) - extra;
+    private void DrawDetail(DrawingContext dc, string text, double size, IBrush brush, double x, double y, double extra, IBrush? dimColon = null)
+    {
+        foreach (char c in text)
+        {
+            var glyph = Text(c.ToString(), size, c == ':' && dimColon != null ? dimColon : brush, detailFace);
+            double advance = DetailAdvance(c, size, extra);
+            dc.DrawText(glyph, new Point(x + (advance - Tracking(size) - extra - glyph.WidthIncludingTrailingWhitespace) / 2, y));
+            x += advance;
+        }
+    }
 
     private double LayoutSpaced(double y, CultureInfo culture)
     {
         wY = y;
-        wDaySize = mainSize * .62; wDayExtra = wDaySize * .2;
+        SpacedStretch = LinuxDesktop.DisplayName(p.Font) is "Bahnschrift" or LinuxDesktop.Din ? 1.18 : 1;
+        string detail = p.DetailFont.Length > 0 ? p.DetailFont : p.Font;
+        string key = $"{detail}|{p.FontWeight}";
+        if (key != detailKey)
+        {
+            detailKey = key; detailWidths.Clear();
+            detailFace = new Typeface(LinuxDesktop.Family(detail), FontStyle.Normal, p.DetailFont.Length > 0 ? FontWeight.Medium : Weight(p.FontWeight), FontStretch.Normal);
+        }
+        wDaySize = mainSize * .62; wDayExtra = wDaySize * (SpacedStretch > 1 ? .2 : .14);
         (wDayTop, wDayH) = Ink("M", wDaySize);
         wDay = p.Weekday ? Case(now.ToString("dddd", culture), culture) : "";
         double dayReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => StableWidth(Case(d, culture), wDaySize, wDayExtra)) * SpacedStretch : 0;
 
         wDateSize = mainSize * .2; wDateExtra = wDateSize * .18;
         wDate = p.Date ? Case(TemplateFormatter.FullDate(now, culture), culture) : "";
-        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => StableWidth(Case(TemplateFormatter.FullDate(d, culture), culture), wDateSize, wDateExtra)) : 0;
-        var (dateTop, dateH) = Ink("8", wDateSize);
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => DetailWidth(Case(TemplateFormatter.FullDate(d, culture), culture), wDateSize, wDateExtra)) : 0;
+        var (dateTop, dateH) = InkOf("8", wDateSize, detailFace, "detail" + detailKey);
         double dateCap = (p.Weekday ? y + wDayH : y) + mainSize * .2;
         wDateY = dateCap - dateTop;
 
         wTimeSize = mainSize * .17; wTimeExtra = wTimeSize * .16;
         wTime = TemplateFormatter.CompactTime(now, p, culture).ToUpper(culture);
-        double timeReserve = StableWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).ToUpper(culture).Replace('2', '8'), wTimeSize, wTimeExtra);
+        double timeReserve = DetailWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).ToUpper(culture).Replace('2', '8'), wTimeSize, wTimeExtra);
         wDash = wTimeSize * 1.1;
-        var (timeTop, timeH) = Ink("8", wTimeSize);
+        var (timeTop, timeH) = InkOf("8", wTimeSize, detailFace, "detail" + detailKey);
         double timeCap = (p.Date ? dateCap + dateH : dateCap) + mainSize * .17;
         wTimeY = timeCap - timeTop;
         wTimeMid = timeCap + timeH / 2;
@@ -514,10 +546,10 @@ public sealed class ClockFace : Panel
                 DrawStable(dc, wDay, wDaySize, inkBrush, x, wY - wDayTop, extra: wDayExtra);
         }
         if (wDate.Length > 0)
-            DrawStable(dc, wDate, wDateSize, Solid(Alpha(text, .9)), wCenter - StableWidth(wDate, wDateSize, wDateExtra) / 2, wDateY, extra: wDateExtra);
+            DrawDetail(dc, wDate, wDateSize, Solid(Alpha(text, .9)), wCenter - DetailWidth(wDate, wDateSize, wDateExtra) / 2, wDateY, wDateExtra);
         // The time sits between two short rules: "—  3:56:23 PM  —".
-        double tw = StableWidth(wTime, wTimeSize, wTimeExtra), tx = wCenter - tw / 2, gap = wTimeSize * .8;
-        DrawStable(dc, wTime, wTimeSize, Solid(Alpha(text, .78)), tx, wTimeY, dim, wTimeExtra);
+        double tw = DetailWidth(wTime, wTimeSize, wTimeExtra), tx = wCenter - tw / 2, gap = wTimeSize * .8;
+        DrawDetail(dc, wTime, wTimeSize, Solid(Alpha(text, .78)), tx, wTimeY, wTimeExtra, dim);
         var rule = new Pen(Solid(Alpha(accent, .75)), Math.Max(1, 1.2 * p.Scale));
         dc.DrawLine(rule, new Point(tx - gap - wDash, wTimeMid), new Point(tx - gap, wTimeMid));
         dc.DrawLine(rule, new Point(tx + tw + gap, wTimeMid), new Point(tx + tw + gap + wDash, wTimeMid));

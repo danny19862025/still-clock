@@ -32,6 +32,8 @@ public sealed class Preferences
     public bool Fade { get; set; } = true;
     /// <summary>Script layout: the handwriting font used for the weekday.</summary>
     public string ScriptFont { get; set; } = "Segoe Script";
+    /// <summary>Font for the small date and time lines of the Spaced layout. Empty means the main font.</summary>
+    public string DetailFont { get; set; } = "";
     /// <summary>Script layout: horizontal width of the tall day number (1 = the font's natural width).</summary>
     public double Condense { get; set; } = .6;
     public string Font { get; set; } = "Segoe UI Variable Display";
@@ -108,12 +110,13 @@ public sealed class Preferences
         Seconds = false; Advanced = false;
         Glow = Gradient = Scanlines = BlinkSeparator = ShowZone = false; GlowStrength = .6;
         Frame = "None"; SecondsIndicator = "None"; Caption = ""; Layout = "Classic"; Fade = true;
-        ScriptFont = "Segoe Script"; Condense = .6;
+        ScriptFont = "Segoe Script"; Condense = .6; DetailFont = "";
         switch (preset)
         {
             case "Spaced":
                 // A wide, letter-spaced weekday over the date and a dashed time line, all centred.
-                Layout = "Spaced"; Font = "Bahnschrift"; FontWeight = "SemiBold"; TextColor = "#F6F2FF"; AccentColor = "#FFC2E2";
+                // Anurati when installed (it is free for personal use, so it is not bundled); otherwise the bundled Michroma.
+                Layout = "Spaced"; Font = "Anurati"; FontWeight = "Regular"; DetailFont = "Quicksand"; TextColor = "#F6F2FF"; AccentColor = "#FFC2E2";
                 Glow = true; GlowStrength = .3; Seconds = true; Fade = false; Alignment = "Center";
                 break;
             case "Split":
@@ -180,6 +183,8 @@ public sealed class Preferences
         if (!Presets.Contains(Preset)) Preset = "Minimal";
         if (!Layouts.Contains(Layout)) Layout = "Classic";
         if (string.IsNullOrWhiteSpace(ScriptFont) || ScriptFont.Length > 150) ScriptFont = "Segoe Script";
+        DetailFont = (DetailFont ?? "").Trim();
+        if (DetailFont.Length > 150) DetailFont = "";
         Condense = Limit(Condense, .35, 1, .6);
         if (string.IsNullOrWhiteSpace(Font) || Font.Length > 150) Font = "Segoe UI Variable Display";
         if (!Weights.Contains(FontWeight)) FontWeight = "Light";

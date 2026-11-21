@@ -90,7 +90,7 @@ Settings has five pages (**Ctrl+1–5**):
 
 - **Top bar:** **About** (or **F1**) and a ☕ **Buy Me a Coffee** button sit beside the live time.
 - **01 Theme:** **Settings appearance** (Dark, Light or Match Windows/system), a live gallery of all fourteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
-- **02 Style:** layout (Classic, Poster, Script, Overlay, Arc, Split or Spaced), day-number fade, script font and number width, font, weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **02 Style:** layout (Classic, Poster, Script, Overlay, Arc, Split or Spaced), day-number fade, script font and number width, font, small text font (for the Spaced date and time), weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Calendar:** an optional calendar with the clock. Pick a mode from live previews: **Month** (the whole month), **Week** (this week) or **Strip** (every day of the month in one row). Place it below or to the right of the clock, choose the first day of the week, and show week numbers, dimmed weekends and days from neighbouring months. Today is marked in the accent colour. Off by default; it stays when you switch presets.
 - **05 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
@@ -127,7 +127,7 @@ cards stay dark in every mode, because they stand in for your wallpaper.
 - **Signature:** the Script layout. A tall, narrow white day number, the month running up its side, a blue handwritten weekday sweeping across it, and a bold time beneath.
 - **Midnight:** the Overlay layout. A big see-through condensed time, a white handwritten weekday across it, and a condensed ordinal date such as 27TH FEBRUARY 2026.
 - **Arc:** hours stacked over fading minutes, a glowing teal arc across them and a small date such as 17 Tue Sep. Turn on a seconds indicator and the arc sweeps with the seconds.
-- **Spaced:** a wide, letter-spaced weekday such as MONDAY, the full date beneath (SEPTEMBER 28, 2026 or 28 SEPTEMBER 2026, following your region), and the time between two short rules, with a soft pink glow.
+- **Spaced:** the look of the popular "Mond" desktop skin. A wide, letter-spaced weekday such as MONDAY, the full date beneath (SEPTEMBER 28, 2026 or 28 SEPTEMBER 2026, following your region), and the time between two short rules, with a soft pink glow. The weekday uses **Anurati** if you have installed it (it is free for personal use, so Still cannot include it), and otherwise the bundled **Michroma**. The date and time use the bundled **Quicksand**.
 - **Split:** a flat translucent panel with a bold hot-pink hour, a dim colon, white minutes with small raised seconds and a compact `2026-NOV-18` date.
 - **Neon Poster:** the Poster layout in hot magenta with glow, and a seconds bar in place of the underline.
 - **HUD:** a scanlined instrument panel with corner brackets, a `SYS.CHRONO` caption, a UTC offset tag and segmented seconds.

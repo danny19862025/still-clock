@@ -21,12 +21,12 @@ internal static class LinuxDesktop
     // ---- Fonts ----
     // Presets name Windows fonts. Saved preferences keep those names (so themes stay portable)
     // and Linux draws them with bundled open-licence equivalents.
-    internal const string Sans = "Inter", Din = "Barlow", Script = "Kaushan Script", Mono = "Share Tech Mono";
-    internal static readonly string[] Bundled = [Sans, Din, Script, Mono];
+    internal const string Sans = "Inter", Din = "Barlow", Script = "Kaushan Script", Mono = "Share Tech Mono", Round = "Quicksand", Wide = "Michroma";
+    internal static readonly string[] Bundled = [Sans, Din, Script, Mono, Round, Wide];
     private static readonly Dictionary<string, string> Substitutes = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Segoe UI Variable Display"] = Sans, ["Segoe UI Variable Text"] = Sans, ["Segoe UI"] = Sans, ["Segoe UI Light"] = Sans,
-        ["Bahnschrift"] = Din,
+        ["Bahnschrift"] = Din, ["Anurati"] = Wide,
         ["Segoe Script"] = Script, ["Ink Free"] = Script, ["Segoe Print"] = Script, ["Gabriola"] = Script,
         ["Lucida Handwriting"] = Script, ["Brush Script MT"] = Script, ["Mistral"] = Script,
         ["Cascadia Mono"] = Mono, ["Cascadia Code"] = Mono, ["Consolas"] = Mono,

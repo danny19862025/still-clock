@@ -35,7 +35,7 @@ public sealed class ClockFace : FrameworkElement
         if (key != fontKey)
         {
             fontKey = key; widths.Clear(); reserves.Clear();
-            typeface = new Typeface(new FontFamily(p.Font), FontStyles.Normal, Weight(p.FontWeight), FontStretches.Normal);
+            typeface = new Typeface(AppFonts.Family(p.Font), FontStyles.Normal, Weight(p.FontWeight), FontStretches.Normal);
         }
         mainSize = p.FontSize * p.Scale;
         cell = "0123456789".Max(c => { if (!widths.TryGetValue((c, mainSize), out double w)) widths[(c, mainSize)] = w = Glyph(c.ToString(), mainSize, Brushes.White).WidthIncludingTrailingWhitespace; return w; });
@@ -216,8 +216,8 @@ public sealed class ClockFace : FrameworkElement
     private double LayoutScript(double y, CultureInfo culture)
     {
         double s = p.Scale, cond = p.Condense;
-        scriptFace = new Typeface(new FontFamily(p.ScriptFont), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
-        boldFace = new Typeface(new FontFamily(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        scriptFace = new Typeface(AppFonts.Family(p.ScriptFont), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        boldFace = new Typeface(AppFonts.Family(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
         sY = y;
         sNumSize = mainSize * 2.7; sNumExtra = -sNumSize * .02;
         (sNumTop, sNumH) = Ink("8", sNumSize);
@@ -309,7 +309,7 @@ public sealed class ClockFace : FrameworkElement
     private double LayoutOverlay(double y, CultureInfo culture)
     {
         double s = p.Scale, cond = p.Condense;
-        scriptFace = new Typeface(new FontFamily(p.ScriptFont), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        scriptFace = new Typeface(AppFonts.Family(p.ScriptFont), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
         oY = y;
         oSize = mainSize * 1.7; oExtra = -oSize * .02;
         (oTop, oH) = Ink("8", oSize);
@@ -390,7 +390,7 @@ public sealed class ClockFace : FrameworkElement
         y += mainSize * .1;
         xY = y;
         xSize = mainSize * .66;
-        splitBold = new Typeface(new FontFamily(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+        splitBold = new Typeface(AppFonts.Family(p.Font), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
         (xTop, xH) = Ink("8", xSize);
         var boldInk = Text("8", xSize, Brushes.White, splitBold).BuildGeometry(new Point(0, 0)).Bounds;
         xBoldTop = boldInk.IsEmpty ? 0 : boldInk.Top;
@@ -454,30 +454,68 @@ public sealed class ClockFace : FrameworkElement
 
     // ---- Spaced layout: a wide, letter-spaced weekday, the full date, and "—  3:56:23 PM  —" beneath ----
     private bool spacedLayout;
-    private const double SpacedStretch = 1.18; // the weekday is widened for an extended, display-face look
+    private double wStretch = 1; // narrow faces (Bahnschrift) are widened for an extended, display-face look
     private string wDay = "", wDate = "", wTime = "";
     private double wY, wDaySize, wDayExtra, wDayTop, wDayH, wDateSize, wDateExtra, wDateY, wTimeSize, wTimeExtra, wTimeY, wTimeMid, wDash, wCenter, wWidth, wIndicatorY;
+
+    // The date and time lines use the "small text" font (DetailFont), measured separately from the main face.
+    private Typeface detailFace = new("Segoe UI");
+    private string detailKey = "";
+    private readonly Dictionary<(char, double), double> detailWidths = [];
+    private double DetailGlyph(char c, double size)
+    {
+        if (!detailWidths.TryGetValue((c, size), out double w))
+            detailWidths[(c, size)] = w = Text(c.ToString(), size, Brushes.White, detailFace).WidthIncludingTrailingWhitespace;
+        return w;
+    }
+    private double DetailAdvance(char c, double size, double extra) =>
+        (char.IsAsciiDigit(c) ? "0123456789".Max(d => DetailGlyph(d, size)) : DetailGlyph(c, size)) + Tracking(size) + extra;
+    private double DetailWidth(string s, double size, double extra) => s.Length == 0 ? 0 : s.Sum(c => DetailAdvance(c, size, extra)) - Tracking(size) - extra;
+    private (double Top, double Height) DetailInk(string sample, double size)
+    {
+        var b = Text(sample, size, Brushes.White, detailFace).BuildGeometry(new Point(0, 0)).Bounds;
+        return b.IsEmpty ? (0, size * .7) : (b.Top, b.Height);
+    }
+    private void DrawDetail(DrawingContext dc, string text, double size, Brush brush, double x, double y, double extra, Brush? dimColon = null)
+    {
+        foreach (char c in text)
+        {
+            var glyph = Text(c.ToString(), size, c == ':' && dimColon != null ? dimColon : brush, detailFace);
+            double advance = DetailAdvance(c, size, extra);
+            dc.DrawText(glyph, new Point(x + (advance - Tracking(size) - extra - glyph.WidthIncludingTrailingWhitespace) / 2, y));
+            x += advance;
+        }
+    }
 
     private double LayoutSpaced(double y, CultureInfo culture)
     {
         wY = y;
-        wDaySize = mainSize * .62; wDayExtra = wDaySize * .2;
+        string drawn = FontCatalog.Resolve(p.Font, AppFonts.IsInstalled);
+        wStretch = drawn.Equals("Bahnschrift", StringComparison.OrdinalIgnoreCase) ? 1.18 : 1;
+        string detail = p.DetailFont.Length > 0 ? p.DetailFont : p.Font;
+        string key = $"{detail}|{p.FontWeight}";
+        if (key != detailKey)
+        {
+            detailKey = key; detailWidths.Clear();
+            detailFace = new Typeface(AppFonts.Family(detail), FontStyles.Normal, p.DetailFont.Length > 0 ? FontWeights.Medium : Weight(p.FontWeight), FontStretches.Normal);
+        }
+        wDaySize = mainSize * .62; wDayExtra = wDaySize * (wStretch > 1 ? .2 : .14);
         (wDayTop, wDayH) = Ink("M", wDaySize);
         wDay = p.Weekday ? Case(now.ToString("dddd", culture), culture) : "";
-        double dayReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => StableWidth(Case(d, culture), wDaySize, wDayExtra)) * SpacedStretch : 0;
+        double dayReserve = p.Weekday ? culture.DateTimeFormat.DayNames.Max(d => StableWidth(Case(d, culture), wDaySize, wDayExtra)) * wStretch : 0;
 
         wDateSize = mainSize * .2; wDateExtra = wDateSize * .18;
         wDate = p.Date ? Case(TemplateFormatter.FullDate(now, culture), culture) : "";
-        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => StableWidth(Case(TemplateFormatter.FullDate(d, culture), culture), wDateSize, wDateExtra)) : 0;
-        var (dateTop, dateH) = Ink("8", wDateSize);
+        double dateReserve = p.Date ? Enumerable.Range(1, 12).Select(m => new DateTime(2026, m, 28)).Max(d => DetailWidth(Case(TemplateFormatter.FullDate(d, culture), culture), wDateSize, wDateExtra)) : 0;
+        var (dateTop, dateH) = DetailInk("8", wDateSize);
         double dateCap = (p.Weekday ? y + wDayH : y) + mainSize * .2;
         wDateY = dateCap - dateTop;
 
         wTimeSize = mainSize * .17; wTimeExtra = wTimeSize * .16;
         wTime = TemplateFormatter.CompactTime(now, p, culture).ToUpper(culture);
-        double timeReserve = StableWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).ToUpper(culture).Replace('2', '8'), wTimeSize, wTimeExtra);
+        double timeReserve = DetailWidth(TemplateFormatter.CompactTime(new DateTime(2026, 1, 1, 20, 58, 58), p, culture).ToUpper(culture).Replace('2', '8'), wTimeSize, wTimeExtra);
         wDash = wTimeSize * 1.1;
-        var (timeTop, timeH) = Ink("8", wTimeSize);
+        var (timeTop, timeH) = DetailInk("8", wTimeSize);
         double timeCap = (p.Date ? dateCap + dateH : dateCap) + mainSize * .17;
         wTimeY = timeCap - timeTop;
         wTimeMid = timeCap + timeH / 2;
@@ -494,17 +532,17 @@ public sealed class ClockFace : FrameworkElement
     {
         if (wDay.Length > 0)
         {
-            double w = StableWidth(wDay, wDaySize, wDayExtra) * SpacedStretch, x = wCenter - w / 2;
-            dc.PushTransform(new ScaleTransform(SpacedStretch, 1, x, 0));
+            double w = StableWidth(wDay, wDaySize, wDayExtra) * wStretch, x = wCenter - w / 2;
+            dc.PushTransform(new ScaleTransform(wStretch, 1, x, 0));
             DrawStable(dc, wDay, wDaySize, inkBrush, x, wY - wDayTop, extra: wDayExtra);
             dc.Pop();
         }
         if (wDate.Length > 0)
-            DrawStable(dc, wDate, wDateSize, Frozen(new SolidColorBrush(Alpha(text, .9))), wCenter - StableWidth(wDate, wDateSize, wDateExtra) / 2, wDateY, extra: wDateExtra);
+            DrawDetail(dc, wDate, wDateSize, Frozen(new SolidColorBrush(Alpha(text, .9))), wCenter - DetailWidth(wDate, wDateSize, wDateExtra) / 2, wDateY, wDateExtra);
         // The time sits between two short rules: "—  3:56:23 PM  —".
-        double tw = StableWidth(wTime, wTimeSize, wTimeExtra), tx = wCenter - tw / 2, gap = wTimeSize * .8;
+        double tw = DetailWidth(wTime, wTimeSize, wTimeExtra), tx = wCenter - tw / 2, gap = wTimeSize * .8;
         var timeBrush = Frozen(new SolidColorBrush(Alpha(text, .78)));
-        DrawStable(dc, wTime, wTimeSize, timeBrush, tx, wTimeY, dim, wTimeExtra);
+        DrawDetail(dc, wTime, wTimeSize, timeBrush, tx, wTimeY, wTimeExtra, dim);
         var rule = new Pen(Frozen(new SolidColorBrush(Alpha(accent, .75))), Math.Max(1, 1.2 * p.Scale));
         dc.DrawLine(rule, new Point(tx - gap - wDash, wTimeMid), new Point(tx - gap, wTimeMid));
         dc.DrawLine(rule, new Point(tx + tw + gap, wTimeMid), new Point(tx + tw + gap + wDash, wTimeMid));

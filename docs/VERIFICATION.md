@@ -1,3 +1,9 @@
+## Version 2.7.0 validation
+
+- Windows 11: Release builds of the Windows and Linux apps succeeded. All 44 core regression tests passed, including the Flip presets.
+- `Still.exe --verify` exported actual WPF renders of Flip, Flip Light, and Flip with always-on-top and 12-hour time. All were visually inspected; Flip and Flip Light are in `docs/images`.
+- Not exercised: the Linux Flip render at runtime (no Linux session here). The Linux CI job builds and tests it.
+
 ## Version 2.6.1 validation
 
 - Windows 11: Release builds of the Windows and Linux apps succeeded. All core regression tests passed, including font fallback and small-text font normalization.

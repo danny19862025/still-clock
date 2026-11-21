@@ -220,13 +220,17 @@ public partial class ClockApplication : Application
     private void CaptureScreenshots()
     {
         string dir = Path.Combine(AppContext.BaseDirectory, "screenshots"); Directory.CreateDirectory(dir);
-        foreach (string preset in Preferences.Presets)
+        // Every preset, plus Flip with always-on-top on (it shows a pin) and in 12-hour time.
+        var renders = Preferences.Presets.Select(name => (name, file: name.ToLowerInvariant(), pinned: false))
+            .Append(("Flip", "flip-pinned-12h", true));
+        foreach (var (preset, file, pinned) in renders)
         {
             var p = new Preferences(); p.ApplyPreset(preset);
+            if (pinned) { p.Topmost = true; p.Hour24 = false; }
             var face = new ClockFace(); face.Update(p, new DateTime(2026, 11, 12, 9, 41, 28));
             var background = new Border { Background = new LinearGradientBrush(Color.FromRgb(8, 14, 30), Color.FromRgb(40, 18, 60), 35), Padding = new Thickness(48), Child = face };
             background.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity)); background.Arrange(new Rect(background.DesiredSize)); background.UpdateLayout();
-            SaveVisual(background, Path.Combine(dir, preset.ToLowerInvariant() + ".png"));
+            SaveVisual(background, Path.Combine(dir, file + ".png"));
         }
         OpenSettings(); settings!.UpdateLayout();
         SaveVisual(settings.Content as FrameworkElement ?? settings, Path.Combine(dir, "settings.png"));

@@ -94,6 +94,17 @@ public static class TemplateFormatter
         return (hour, time.ToString(p.Seconds ? "mm:ss" : "mm", culture));
     }
 
+    /// <summary>"September 28, 2026" where the region writes month first (e.g. en-US); "28 September 2026" elsewhere.</summary>
+    public static string FullDate(DateTime time, CultureInfo? culture = null)
+    {
+        culture ??= CultureInfo.CurrentCulture;
+        // Ignore the weekday part ("dddd") and see whether the month or the day comes first.
+        string pattern = culture.DateTimeFormat.LongDatePattern.Replace("dddd", "").Replace("ddd", "");
+        int month = pattern.IndexOf('M'), day = pattern.IndexOf('d');
+        bool monthFirst = month >= 0 && day >= 0 && month < day;
+        return time.ToString(monthFirst ? "MMMM d, yyyy" : "d MMMM yyyy", culture);
+    }
+
     /// <summary>"27th February 2026" in English (ordinal day); "d MMMM yyyy" in other languages.</summary>
     public static string OrdinalDate(DateTime time, CultureInfo? culture = null)
     {

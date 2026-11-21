@@ -1,3 +1,9 @@
+## Version 2.6.0 validation
+
+- Windows 11: Release builds of the Windows and Linux apps succeeded. All 42 core regression tests passed, including the Spaced preset and regional full-date tests.
+- `Still.exe --verify` exported an actual WPF render of the Spaced preset, which was visually inspected and is in `docs/images`.
+- Not exercised: the Linux Spaced render at runtime (no Linux session here); the Linux CI job builds and tests it.
+
 ## Version 2.5.0 validation
 
 - Windows 11: Release builds of the Windows app and the Linux (Avalonia) app succeeded. All 40 core regression tests passed, including UI theme, version comparison, release parsing and checksum lookup.

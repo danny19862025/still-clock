@@ -320,4 +320,16 @@ Test("spaced layout: preset and regional full date", () =>
     Equal("28 September 2026", TemplateFormatter.FullDate(day, en));
     Equal("28 September 2026", TemplateFormatter.FullDate(day, CultureInfo.GetCultureInfo("de-DE")));
 });
+Test("bundled fonts: Anurati falls back to Michroma unless installed; small-text font normalizes", () =>
+{
+    var look = new Preferences(); look.ApplyPreset("Spaced");
+    Equal("Anurati", look.Font); Equal("Quicksand", look.DetailFont);
+    Equal("Michroma", FontCatalog.Resolve("Anurati", _ => false));
+    Equal("Anurati", FontCatalog.Resolve("Anurati", name => name == "Anurati"));
+    Equal("Bahnschrift", FontCatalog.Resolve("Bahnschrift", _ => false));
+    True(FontCatalog.IsBundled("quicksand") && FontCatalog.IsBundled("Michroma") && !FontCatalog.IsBundled("Anurati"));
+    var other = new Preferences(); other.ApplyPreset("Neon"); Equal("", other.DetailFont);
+    var bad = new Preferences { DetailFont = new string('x', 200) }; bad.Normalize(); Equal("", bad.DetailFont);
+    var spaced = new Preferences { DetailFont = "  Quicksand " }; spaced.Normalize(); Equal("Quicksand", spaced.DetailFont);
+});
 Console.WriteLine($"{count} tests passed.");

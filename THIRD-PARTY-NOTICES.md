@@ -41,7 +41,9 @@ Self-contained releases bundle Microsoft's .NET Windows Desktop runtime.
 .NET is distributed under MIT and other component licences. Runtime licence
 and third-party notices supplied by the publish process are retained in the
 release directory. WPF and WinForms are Microsoft .NET components. Windows
-system fonts are used from the operating system; no fonts are redistributed.
+system fonts are used from the operating system. The Windows app also bundles
+Quicksand and Michroma (SIL Open Font License 1.1, listed below); their licence
+texts are in `licences/fonts/` beside Still.exe and in `src/Still.App/Fonts/`.
 
 # Linux release
 
@@ -64,5 +66,12 @@ licence texts are in `licences/fonts/` and in `src/Still.Linux/Assets/Fonts/`:
 - **Barlow**, Copyright 2017 The Barlow Project Authors (https://github.com/jpt/barlow).
 - **Kaushan Script**, Copyright (c) 2011 Pablo Impallari (www.impallari.com).
 - **Share Tech Mono**, Copyright (c) 2012 Carrois Type Design, Ralph du Carrois.
+- **Quicksand**, Copyright 2011 The Quicksand Project Authors
+  (https://github.com/andrew-paglinawan/QuicksandFamily). Also bundled on Windows.
+- **Michroma**, Copyright 2011 The Michroma Project Authors
+  (https://github.com/googlefonts/Michroma-font). Also bundled on Windows.
+
+Anurati is not bundled. The Spaced preset uses it only if you have installed it
+yourself, and otherwise draws with Michroma.
 
 The fonts are unmodified and are not sold on their own.

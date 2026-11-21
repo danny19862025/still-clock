@@ -367,9 +367,14 @@ public sealed class SettingsWindow : Window
         Range("Script / Overlay number _width", .35, 1, P.Condense, .05, v => P.Condense = v, "0%");
 
         Section("Typeface");
-        var fonts = Fonts.SystemFontFamilies.Select(f => f.Source).OrderBy(s => s).ToList();
-        if (!fonts.Contains(P.Font)) fonts.Insert(0, P.Font);
+        var fonts = AppFonts.Choices(P.Font);
         Choice("_Font", fonts, P.Font, v => P.Font = v);
+        if (FontCatalog.Fallbacks.TryGetValue(P.Font, out var standIn) && !AppFonts.IsInstalled(P.Font))
+            Note($"{P.Font} isn't installed, so Still uses the bundled {standIn} instead. Install {P.Font} yourself and Still will use it automatically.");
+        const string sameFont = "Same as main font";
+        var details = AppFonts.Choices(P.DetailFont.Length > 0 ? P.DetailFont : "Quicksand"); details.Insert(0, sameFont);
+        Choice("Small te_xt font", details, P.DetailFont.Length > 0 ? P.DetailFont : sameFont, v => P.DetailFont = v == sameFont ? "" : v);
+        Note("Used for the date and time lines of the Spaced layout. Quicksand and Michroma are bundled with Still.");
         Choice("_Weight", Preferences.Weights, P.FontWeight, v => P.FontWeight = v);
         Range("_Size", 32, 160, P.FontSize, 1, v => P.FontSize = v);
         Range("Letter _spacing", -4, 24, P.LetterSpacing, .5, v => P.LetterSpacing = v, "0.0");

@@ -381,7 +381,13 @@ public sealed class SettingsWindow : Window
         Section("Typeface");
         string font = LinuxDesktop.DisplayName(P.Font);
         Choice("_Font", LinuxDesktop.FontChoices(font), font, v => P.Font = v);
-        Note("Inter, Barlow, Kaushan Script and Share Tech Mono are built in. Presets made for Windows fonts use them automatically.");
+        Note("Inter, Barlow, Kaushan Script, Share Tech Mono, Quicksand and Michroma are built in. Presets made for Windows fonts use them automatically, and Anurati is drawn with Michroma unless you install it.");
+        const string sameFont = "Same as main font";
+        string detailFont = P.DetailFont.Length > 0 ? LinuxDesktop.DisplayName(P.DetailFont) : sameFont;
+        var details = LinuxDesktop.FontChoices(LinuxDesktop.Round); details.Insert(0, sameFont);
+        if (!details.Contains(detailFont)) details.Insert(1, detailFont);
+        Choice("Small te_xt font", details, detailFont, v => P.DetailFont = v == sameFont ? "" : v);
+        Note("Used for the date and time lines of the Spaced layout.");
         Choice("_Weight", Preferences.Weights, P.FontWeight, v => P.FontWeight = v);
         Range("_Size", 32, 160, P.FontSize, 1, v => P.FontSize = v);
         Range("Letter _spacing", -4, 24, P.LetterSpacing, .5, v => P.LetterSpacing = v, "0.0");

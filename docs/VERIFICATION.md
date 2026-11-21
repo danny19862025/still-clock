@@ -1,3 +1,9 @@
+## Version 2.6.1 validation
+
+- Windows 11: Release builds of the Windows and Linux apps succeeded. All core regression tests passed, including font fallback and small-text font normalization.
+- The Spaced preset was rendered with the bundled Michroma (Anurati is not installed here) and Quicksand, and inspected. The font licence texts are copied to `licences/fonts/` in the Windows build.
+- Not exercised: Anurati itself (not installed here), and the Linux render at runtime. The Linux CI job builds and tests it.
+
 ## Version 2.6.0 validation
 
 - Windows 11: Release builds of the Windows and Linux apps succeeded. All 42 core regression tests passed, including the Spaced preset and regional full-date tests.

@@ -30,7 +30,7 @@ public partial class ClockApplication : Application
         started = true;
         Preferences = Store.Load();
         if (e.Args.Contains("--verify")) Preferences.ApplyPreset("Neon");
-        if (!Fonts.SystemFontFamilies.Any(f => f.Source == Preferences.Font)) Preferences.Font = "Segoe UI";
+        if (!AppFonts.IsAvailable(Preferences.Font)) Preferences.Font = "Segoe UI";
         // Read our per-user Run entry rather than trusting a stale JSON preference.
         Preferences.LaunchAtLogin = LoginEnabled();
         Ui.Apply(Resources, e.Args.Contains("--light") ? "Light" : Preferences.UiTheme);

@@ -73,8 +73,10 @@ public sealed class ClockFace : Panel
         overlayLayout = p.Layout == "Overlay" && !p.Advanced;
         splitLayout = p.Layout == "Split" && !p.Advanced;
         spacedLayout = p.Layout == "Spaced" && !p.Advanced;
+        flipLayout = p.Layout == "Flip" && !p.Advanced;
         arcLayout = p.Layout == "Arc" && !p.Advanced;
-        if (spacedLayout) y = LayoutSpaced(y, culture);
+        if (flipLayout) y = LayoutFlip(y, culture);
+        else if (spacedLayout) y = LayoutSpaced(y, culture);
         else if (splitLayout) y = LayoutSplit(y, culture);
         else if (overlayLayout) y = LayoutOverlay(y, culture);
         else if (arcLayout) y = LayoutArc(y, culture);
@@ -465,6 +467,109 @@ public sealed class ClockFace : Panel
         if (xAmPm.Length > 0) DrawStable(dc, xAmPm, xSecSize, Solid(accent), xSuffixX, xAmY);
         if (xDate.Length > 0) DrawStable(dc, xDate, xDateSize, Solid(Alpha(text, .94)), xCenter - StableWidth(xDate, xDateSize, xDateExtra) / 2, xDateY, extra: xDateExtra);
         if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, xX, xTimeW, xIndicatorY);
+    }
+
+    // ---- Flip layout: split-flap tiles in a recessed tray, the weekday and date across the top ----
+    private bool flipLayout;
+    private Typeface flipFace;
+    private string fWeekday = "", fDate = "", fAmPm = "", fTime = "";
+    private double fHeadSize, fHeadExtra, fHeadY, fTrayX, fTrayY, fTrayW, fTrayH, fTileW, fColonW, fTileH, fGap, fPad, fDigitSize, fDigitTop, fDigitH, fIndicatorY;
+
+    private double LayoutFlip(double y, CultureInfo culture)
+    {
+        flipFace = new Typeface(LinuxDesktop.Family(p.Font), FontStyle.Normal, Weight(p.FontWeight), FontStretch.Normal);
+        fHeadSize = mainSize * .2; fHeadExtra = fHeadSize * .1;
+        fWeekday = p.Weekday ? now.ToString("dddd", culture).ToUpper(culture) : "";
+        fDate = p.Date ? TemplateFormatter.DateParts(now, p, culture).Date.ToUpper(culture) : "";
+        fAmPm = !p.Hour24 && p.AmPm ? now.ToString("tt", culture).ToUpper(culture) : "";
+        var (headTop, headH) = Ink("8", fHeadSize);
+        bool header = fWeekday.Length > 0 || fDate.Length > 0 || fAmPm.Length > 0 || p.Topmost;
+        fHeadY = y - headTop;
+
+        fDigitSize = mainSize * 1.1;
+        (fDigitTop, fDigitH) = InkOf("8", fDigitSize, flipFace, "flip");
+        double cell = "0123456789".Max(c => Text(c.ToString(), fDigitSize, Brushes.White, flipFace).WidthIncludingTrailingWhitespace);
+        fTileH = fDigitH * 1.62;
+        fTileW = Math.Max(cell * 1.2, fTileH * .7);
+        fColonW = fTileW * .34; fGap = mainSize * .085; fPad = mainSize * .065;
+        fTime = now.ToString(p.Hour24 ? "HH:mm" : "hh:mm", culture) + (p.Seconds ? now.ToString(":ss", culture) : "");
+        double tiles = fTime.Sum(c => c == ':' ? fColonW : fTileW) + fGap * (fTime.Length - 1);
+        fTrayW = tiles + fPad * 2; fTrayH = fTileH + fPad * 2;
+        // The tray sits closer to the panel's edge than the header text, like a bezel.
+        fTrayX = padding * .45;
+        fTrayY = header ? y + headH + mainSize * .2 : y;
+        double headerW = StableWidth(fWeekday, fHeadSize, fHeadExtra) + fHeadSize * 1.2 + StableWidth(fDate + (fAmPm.Length > 0 ? "  " + fAmPm : ""), fHeadSize, fHeadExtra) + (p.Topmost ? fHeadSize * 2.5 : 0);
+        bodyWidth = Math.Max(bodyWidth, Math.Max(headerW, fTrayW + fTrayX * 2 - padding * 2));
+        double bottom = fTrayY + fTrayH;
+        fIndicatorY = bottom + mainSize * .14;
+        // Keep the bottom margin equal to the tray's side margin.
+        return (p.SecondsIndicator != "None" ? fIndicatorY + 8 * p.Scale : bottom) + fTrayX - padding;
+    }
+
+    private void RenderFlip(DrawingContext dc, Color text, Color accent)
+    {
+        double s = p.Scale;
+        var surf = Hex(p.SurfaceColor);
+        bool lightPanel = (surf.R * .299 + surf.G * .587 + surf.B * .114) / 255 > .5;
+        Color tray = Mix(surf, Colors.Black, lightPanel ? .5 : .45);
+        Color trayEdge = Mix(surf, Colors.Black, lightPanel ? .62 : .75);
+        Color tileTop = lightPanel ? Mix(surf, Colors.White, .75) : Mix(surf, Colors.White, .09);
+        Color tileBottom = lightPanel ? Mix(surf, Colors.White, .45) : Mix(surf, Colors.White, .035);
+        Color hinge = lightPanel ? Mix(surf, Colors.Black, .2) : Mix(surf, Colors.White, .2);
+
+        // Header: weekday in the accent colour, then the date (and AM/PM); a pin when always-on-top is on.
+        double hx = padding;
+        if (fWeekday.Length > 0)
+        {
+            DrawStable(dc, fWeekday, fHeadSize, Solid(accent), hx, fHeadY, extra: fHeadExtra);
+            hx += StableWidth(fWeekday, fHeadSize, fHeadExtra) + fHeadSize * 1.2;
+        }
+        string dateLine = fDate + (fAmPm.Length > 0 ? (fDate.Length > 0 ? "  " : "") + fAmPm : "");
+        if (dateLine.Length > 0) DrawStable(dc, dateLine, fHeadSize, Solid(Alpha(text, lightPanel ? .72 : .7)), hx, fHeadY, extra: fHeadExtra);
+        if (p.Topmost)
+        {
+            var pin = Geometry.Parse("M4 0h8v1.6L10.4 3v4l3.1 3.2v1.4H2.5v-1.4L5.6 7V3L4 1.6z M7.3 11.6h1.4V16H7.3z");
+            double ps = fHeadSize * 1.1 / 16;
+            var (inkTop, inkH) = Ink("8", fHeadSize);
+            using (dc.PushTransform(new Matrix(ps, 0, 0, ps, Width - padding - 16 * ps, fHeadY + inkTop + inkH / 2 - 8 * ps)))
+                dc.DrawGeometry(Solid(accent), null, pin);
+        }
+
+        // Recessed tray.
+        double trayR = mainSize * .1;
+        dc.DrawRectangle(Solid(tray), new Pen(Solid(trayEdge), Math.Max(1, 1.5 * s)), new Rect(fTrayX, fTrayY, fTrayW, fTrayH), trayR, trayR);
+
+        // Tiles: each digit on its own card with a split line and hinge tabs; the colon on a narrow card.
+        double x = fTrayX + fPad, top = fTrayY + fPad, mid = top + fTileH / 2, tileR = mainSize * .055;
+        var lowerShade = Solid(Color.FromArgb((byte)(lightPanel ? 14 : 22), 0, 0, 0));
+        var textBrush = Solid(text);
+        var splitPen = new Pen(Solid(Color.FromArgb((byte)(lightPanel ? 90 : 200), 0, 0, 0)), Math.Max(1, 1.6 * s));
+        var hingeBrush = Solid(hinge);
+        double hw = mainSize * .06, hh = mainSize * .16;
+        foreach (char c in fTime)
+        {
+            double w = c == ':' ? fColonW : fTileW;
+            var tile = new Rect(x, top, w, fTileH);
+            dc.DrawRectangle(Gradient(new Point(0, top), new Point(0, top + fTileH), (tileTop, 0), (tileBottom, 1)), null, tile, tileR, tileR);
+            using (dc.PushClip(new RoundedRect(tile, tileR)))
+                dc.DrawRectangle(lowerShade, null, new Rect(x, mid, w, fTileH / 2));
+            if (c == ':')
+            {
+                double dot = mainSize * .1;
+                foreach (double dy in new[] { -fTileH * .16, fTileH * .16 })
+                    dc.DrawRectangle(textBrush, null, new Rect(x + (w - dot) / 2, mid + dy - dot / 2, dot, dot), dot * .2, dot * .2);
+            }
+            else
+            {
+                var glyph = Text(c.ToString(), fDigitSize, textBrush, flipFace);
+                dc.DrawText(glyph, new Point(x + (w - glyph.WidthIncludingTrailingWhitespace) / 2, top + (fTileH - fDigitH) / 2 - fDigitTop));
+                dc.DrawLine(splitPen, new Point(x, mid), new Point(x + w, mid));
+                foreach (double hx2 in new[] { x - hw / 2, x + w - hw / 2 })
+                    dc.DrawRectangle(hingeBrush, null, new Rect(hx2, mid - hh / 2, hw, hh), hw * .3, hw * .3);
+            }
+            x += w + fGap;
+        }
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, fTrayX + fPad, fTrayW - fPad * 2, fIndicatorY);
     }
 
     // ---- Spaced layout: a wide, letter-spaced weekday, the full date, and "—  3:56:23 PM  —" beneath ----
@@ -903,6 +1008,7 @@ public sealed class ClockFace : Panel
         if (arcLayout) RenderArc(dc, accent, inkBrush);
         if (splitLayout) RenderSplit(dc, text, accent, inkBrush, dim);
         if (spacedLayout) RenderSpaced(dc, text, accent, inkBrush, dim);
+        if (flipLayout) RenderFlip(dc, text, accent);
     }
 
     private void RenderOverlay(DrawingContext dc)

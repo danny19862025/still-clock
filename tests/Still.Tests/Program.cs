@@ -332,4 +332,16 @@ Test("bundled fonts: Anurati falls back to Michroma unless installed; small-text
     var bad = new Preferences { DetailFont = new string('x', 200) }; bad.Normalize(); Equal("", bad.DetailFont);
     var spaced = new Preferences { DetailFont = "  Quicksand " }; spaced.Normalize(); Equal("Quicksand", spaced.DetailFont);
 });
+Test("flip presets: dark and light panels on the Flip layout", () =>
+{
+    var dark = new Preferences(); dark.ApplyPreset("Flip");
+    var light = new Preferences(); light.ApplyPreset("Flip Light");
+    foreach (var look in new[] { dark, light })
+    {
+        Equal("Flip", look.Layout); Equal("Solid", look.Background); Equal(1d, look.BackgroundOpacity);
+        look.Normalize(); Equal("Flip", look.Layout);
+    }
+    True(dark.SurfaceColor != light.SurfaceColor && dark.TextColor != light.TextColor);
+    var keep = new Preferences { Topmost = true, Locked = true }; keep.ApplyPreset("Flip"); True(keep.Topmost && keep.Locked);
+});
 Console.WriteLine($"{count} tests passed.");

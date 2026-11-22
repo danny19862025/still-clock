@@ -11,6 +11,10 @@ contacts GitHub when you press **Check for updates**.
 Made by Danny Rudd. If Still brightens your desktop, you can
 [buy me a coffee](https://buymeacoffee.com/danny1986) ☕
 
+| Flip | Flip Light |
+| --- | --- |
+| ![Flip preset](docs/images/preset-flip.png) | ![Flip Light preset](docs/images/preset-flip-light.png) |
+
 ![Spaced preset](docs/images/preset-spaced.png)
 
 | Poster | Signature |
@@ -89,8 +93,8 @@ Linux notes:
 Settings has five pages (**Ctrl+1–5**):
 
 - **Top bar:** **About** (or **F1**) and a ☕ **Buy Me a Coffee** button sit beside the live time.
-- **01 Theme:** **Settings appearance** (Dark, Light or Match Windows/system), a live gallery of all fourteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
-- **02 Style:** layout (Classic, Poster, Script, Overlay, Arc, Split or Spaced), day-number fade, script font and number width, font, small text font (for the Spaced date and time), weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
+- **01 Theme:** **Settings appearance** (Dark, Light or Match Windows/system), a live gallery of all sixteen presets, one-click colour palettes, theme sharing (**Copy theme** / **Paste theme**) and **Reset to defaults**.
+- **02 Style:** layout (Classic, Poster, Script, Overlay, Arc, Split, Spaced or Flip), day-number fade, script font and number width, font, small text font (for the Spaced date and time), weight, size, letter spacing, text and accent colours (pick one or type a hex code such as `#FF2BD6`), time format, seconds, AM/PM, weekday style, date format, uppercase, alignment, scale and widget opacity.
 - **03 Effects:** neon glow and its strength, gradient text, seconds indicator, blinking separator, frame, header caption, time-zone tag, surface type and tint, surface opacity, corner radius and CRT scanlines.
 - **04 Calendar:** an optional calendar with the clock. Pick a mode from live previews: **Month** (the whole month), **Week** (this week) or **Strip** (every day of the month in one row). Place it below or to the right of the clock, choose the first day of the week, and show week numbers, dimmed weekends and days from neighbouring months. Today is marked in the accent colour. Off by default; it stays when you switch presets.
 - **05 Advanced:** position & startup (lock, click-through, always-on-top, launch at sign-in, display placement) and the optional custom-text template.
@@ -120,13 +124,14 @@ The settings window's **Dark / Light / Match system** choice stays on your
 computer and is never included in a copied theme. The live preview and preset
 cards stay dark in every mode, because they stand in for your wallpaper.
 
-### Fourteen starting points
+### Sixteen starting points
 
 - **Neon** (default): thin glowing digits, a sweeping seconds bar, a blinking colon and an ISO date.
 - **Poster:** an editorial layout. A huge lavender day number fades out towards its base, the bold month runs across it, the time and a fine underline sit beneath, and the weekday runs up the side.
 - **Signature:** the Script layout. A tall, narrow white day number, the month running up its side, a blue handwritten weekday sweeping across it, and a bold time beneath.
 - **Midnight:** the Overlay layout. A big see-through condensed time, a white handwritten weekday across it, and a condensed ordinal date such as 27TH FEBRUARY 2026.
 - **Arc:** hours stacked over fading minutes, a glowing teal arc across them and a small date such as 17 Tue Sep. Turn on a seconds indicator and the arc sweeps with the seconds.
+- **Flip** and **Flip Light:** a split-flap clock. Each digit sits on its own tile with a split line and hinge tabs, inside a recessed tray, under the weekday in amber and the date. Flip is charcoal; Flip Light is warm white. A pin appears when Always on top is on. The tray and tiles take their colours from the surface tint, so any colour works.
 - **Spaced:** the look of the popular "Mond" desktop skin. A wide, letter-spaced weekday such as MONDAY, the full date beneath (SEPTEMBER 28, 2026 or 28 SEPTEMBER 2026, following your region), and the time between two short rules, with a soft pink glow. The weekday uses **Anurati** if you have installed it (it is free for personal use, so Still cannot include it), and otherwise the bundled **Michroma**. The date and time use the bundled **Quicksand**.
 - **Split:** a flat translucent panel with a bold hot-pink hour, a dim colon, white minutes with small raised seconds and a compact `2026-NOV-18` date.
 - **Neon Poster:** the Poster layout in hot magenta with glow, and a seconds bar in place of the underline.
@@ -273,7 +278,7 @@ settings round-trips/recovery/write failures and off-screen/mixed-DPI restoratio
 See [verification](docs/VERIFICATION.md) for exact verified and unverified scope.
 
 On Windows, run `Still.exe --capture` from a writable release folder to export
-**actual WPF renders** of all fourteen presets and settings into `screenshots/` beside
+**actual WPF renders** of all sixteen presets and settings into `screenshots/` beside
 the executable. This is optional and does not change saved appearance preferences.
 Screenshots do not establish native interaction correctness; use the manual
 Windows checklist as well.
@@ -290,7 +295,7 @@ bash scripts/publish-linux.sh linux-x64                   # tests + artifacts/St
 The release workflow builds the Linux package on Ubuntu alongside the Windows
 installer and attaches both to each GitHub release.
 
-`still --capture` saves renders of all fourteen presets and Settings to `screenshots/`
+`still --capture` saves renders of all sixteen presets and Settings to `screenshots/`
 in the current folder. Avalonia's offscreen renderer does not draw the neon glow,
 so captures show presets without it; the glow does appear on the desktop.
 

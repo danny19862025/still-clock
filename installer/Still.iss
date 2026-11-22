@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "2.6.1"
+  #define AppVersion "2.7.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\artifacts\Still-win-x64"

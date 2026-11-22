@@ -5,8 +5,8 @@ namespace Still.Core;
 
 public sealed class Preferences
 {
-    public static readonly string[] Presets = ["Neon", "Spaced", "Split", "Poster", "Signature", "Midnight", "Arc", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
-    public static readonly string[] Layouts = ["Classic", "Poster", "Script", "Overlay", "Arc", "Split", "Spaced"];
+    public static readonly string[] Presets = ["Neon", "Flip", "Flip Light", "Spaced", "Split", "Poster", "Signature", "Midnight", "Arc", "HUD", "Holo", "Terminal", "Neon Poster", "Minimal", "Typography", "Glass"];
+    public static readonly string[] Layouts = ["Classic", "Poster", "Script", "Overlay", "Arc", "Split", "Spaced", "Flip"];
     public static readonly string[] Weights = ["Thin", "Light", "Regular", "SemiBold", "Bold"];
     public static readonly string[] Frames = ["None", "Brackets", "Outline"];
     public static readonly string[] Indicators = ["None", "Bar", "Segments", "Dots"];
@@ -113,6 +113,16 @@ public sealed class Preferences
         ScriptFont = "Segoe Script"; Condense = .6; DetailFont = "";
         switch (preset)
         {
+            case "Flip":
+            case "Flip Light":
+                // Split-flap tiles in a recessed tray, with the weekday and date across the top.
+                // The panel is the surface colour; tiles, tray and hinges are derived from it.
+                bool light = preset == "Flip Light";
+                Layout = "Flip"; Font = "Bahnschrift"; FontWeight = "SemiBold"; Fade = false; Alignment = "Left";
+                TextColor = light ? "#161616" : "#F2EFE7"; AccentColor = light ? "#C3871A" : "#E8A92C";
+                Background = "Solid"; SurfaceColor = light ? "#F3F1EC" : "#19191B"; BackgroundOpacity = 1; CornerRadius = 20;
+                WeekdayStyle = "Full"; DateStyle = "Short";
+                break;
             case "Spaced":
                 // A wide, letter-spaced weekday over the date and a dashed time line, all centred.
                 // Anurati when installed (it is free for personal use, so it is not bundled); otherwise the bundled Michroma.

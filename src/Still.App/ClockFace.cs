@@ -63,7 +63,12 @@ public sealed class ClockFace : FrameworkElement
         arcLayout = p.Layout == "Arc" && !p.Advanced;
         splitLayout = p.Layout == "Split" && !p.Advanced;
         spacedLayout = p.Layout == "Spaced" && !p.Advanced;
-        if (spacedLayout)
+        flipLayout = p.Layout == "Flip" && !p.Advanced;
+        if (flipLayout)
+        {
+            y = LayoutFlip(y, culture);
+        }
+        else if (spacedLayout)
         {
             y = LayoutSpaced(y, culture);
         }
@@ -450,6 +455,113 @@ public sealed class ClockFace : FrameworkElement
         if (xAmPm.Length > 0) DrawStable(dc, xAmPm, xSecSize, Frozen(new SolidColorBrush(accent)), xSuffixX, xAmY);
         if (xDate.Length > 0) DrawStable(dc, xDate, xDateSize, Frozen(new SolidColorBrush(Alpha(text, .94))), xCenter - StableWidth(xDate, xDateSize, xDateExtra) / 2, xDateY, extra: xDateExtra);
         if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, xX, xTimeW, xIndicatorY);
+    }
+
+    // ---- Flip layout: split-flap tiles in a recessed tray, the weekday and date across the top ----
+    private bool flipLayout;
+    private Typeface flipFace = new("Segoe UI");
+    private string fWeekday = "", fDate = "", fAmPm = "", fTime = "";
+    private double fHeadSize, fHeadExtra, fHeadY, fTrayX, fTrayY, fTrayW, fTrayH, fTileW, fColonW, fTileH, fGap, fPad, fDigitSize, fDigitTop, fDigitH, fIndicatorY;
+
+    private double LayoutFlip(double y, CultureInfo culture)
+    {
+        flipFace = new Typeface(AppFonts.Family(p.Font), FontStyles.Normal, Weight(p.FontWeight), FontStretches.Normal);
+        fHeadSize = mainSize * .2; fHeadExtra = fHeadSize * .1;
+        fWeekday = p.Weekday ? now.ToString("dddd", culture).ToUpper(culture) : "";
+        fDate = p.Date ? TemplateFormatter.DateParts(now, p, culture).Date.ToUpper(culture) : "";
+        fAmPm = !p.Hour24 && p.AmPm ? now.ToString("tt", culture).ToUpper(culture) : "";
+        var (headTop, headH) = Ink("8", fHeadSize);
+        bool header = fWeekday.Length > 0 || fDate.Length > 0 || fAmPm.Length > 0 || p.Topmost;
+        fHeadY = y - headTop;
+
+        fDigitSize = mainSize * 1.1;
+        var ink = Text("8", fDigitSize, Brushes.White, flipFace).BuildGeometry(new Point(0, 0)).Bounds;
+        (fDigitTop, fDigitH) = ink.IsEmpty ? (0, fDigitSize * .7) : (ink.Top, ink.Height);
+        double cell = "0123456789".Max(c => Text(c.ToString(), fDigitSize, Brushes.White, flipFace).WidthIncludingTrailingWhitespace);
+        fTileH = fDigitH * 1.62;
+        fTileW = Math.Max(cell * 1.2, fTileH * .7);
+        fColonW = fTileW * .34; fGap = mainSize * .085; fPad = mainSize * .065;
+        fTime = now.ToString(p.Hour24 ? "HH:mm" : "hh:mm", culture) + (p.Seconds ? now.ToString(":ss", culture) : "");
+        double tiles = fTime.Sum(c => c == ':' ? fColonW : fTileW) + fGap * (fTime.Length - 1);
+        fTrayW = tiles + fPad * 2; fTrayH = fTileH + fPad * 2;
+        // The tray sits closer to the panel's edge than the header text, like a bezel.
+        fTrayX = padding * .45;
+        fTrayY = header ? y + headH + mainSize * .2 : y;
+        double headerW = StableWidth(fWeekday, fHeadSize, fHeadExtra) + fHeadSize * 1.2 + StableWidth(fDate + (fAmPm.Length > 0 ? "  " + fAmPm : ""), fHeadSize, fHeadExtra) + (p.Topmost ? fHeadSize * 2.5 : 0);
+        bodyWidth = Math.Max(bodyWidth, Math.Max(headerW, fTrayW + fTrayX * 2 - padding * 2));
+        double bottom = fTrayY + fTrayH;
+        fIndicatorY = bottom + mainSize * .14;
+        // Keep the bottom margin equal to the tray's side margin.
+        return (p.SecondsIndicator != "None" ? fIndicatorY + 8 * p.Scale : bottom) + fTrayX - padding;
+    }
+
+    private void RenderFlip(DrawingContext dc, Color text, Color accent)
+    {
+        double s = p.Scale;
+        var surf = Hex(p.SurfaceColor);
+        bool lightPanel = (surf.R * .299 + surf.G * .587 + surf.B * .114) / 255 > .5;
+        Color tray = Mix(surf, Colors.Black, lightPanel ? .5 : .45);
+        Color trayEdge = Mix(surf, Colors.Black, lightPanel ? .62 : .75);
+        Color tileTop = lightPanel ? Mix(surf, Colors.White, .75) : Mix(surf, Colors.White, .09);
+        Color tileBottom = lightPanel ? Mix(surf, Colors.White, .45) : Mix(surf, Colors.White, .035);
+        Color hinge = lightPanel ? Mix(surf, Colors.Black, .2) : Mix(surf, Colors.White, .2);
+
+        // Header: weekday in the accent colour, then the date (and AM/PM); a pin when always-on-top is on.
+        double hx = padding;
+        if (fWeekday.Length > 0)
+        {
+            DrawStable(dc, fWeekday, fHeadSize, Frozen(new SolidColorBrush(accent)), hx, fHeadY, extra: fHeadExtra);
+            hx += StableWidth(fWeekday, fHeadSize, fHeadExtra) + fHeadSize * 1.2;
+        }
+        string dateLine = fDate + (fAmPm.Length > 0 ? (fDate.Length > 0 ? "  " : "") + fAmPm : "");
+        if (dateLine.Length > 0) DrawStable(dc, dateLine, fHeadSize, Frozen(new SolidColorBrush(Alpha(text, lightPanel ? .72 : .7))), hx, fHeadY, extra: fHeadExtra);
+        if (p.Topmost)
+        {
+            var pin = Geometry.Parse("M4 0h8v1.6L10.4 3v4l3.1 3.2v1.4H2.5v-1.4L5.6 7V3L4 1.6z M7.3 11.6h1.4V16H7.3z");
+            double ps = fHeadSize * 1.1 / 16;
+            dc.PushTransform(new MatrixTransform(ps, 0, 0, ps, Width - padding - 16 * ps, fHeadY + Ink("8", fHeadSize).Top + Ink("8", fHeadSize).Height / 2 - 8 * ps));
+            dc.DrawGeometry(Frozen(new SolidColorBrush(accent)), null, pin);
+            dc.Pop();
+        }
+
+        // Recessed tray.
+        double trayR = mainSize * .1;
+        var trayRect = new Rect(fTrayX, fTrayY, fTrayW, fTrayH);
+        dc.DrawRoundedRectangle(Frozen(new SolidColorBrush(tray)), new Pen(Frozen(new SolidColorBrush(trayEdge)), Math.Max(1, 1.5 * s)), trayRect, trayR, trayR);
+
+        // Tiles: each digit on its own card with a split line and hinge tabs; the colon on a narrow card.
+        double x = fTrayX + fPad, top = fTrayY + fPad, mid = top + fTileH / 2, tileR = mainSize * .055;
+        var tileFill = Frozen(new LinearGradientBrush(tileTop, tileBottom, 90));
+        var lowerShade = Frozen(new SolidColorBrush(Color.FromArgb((byte)(lightPanel ? 14 : 22), 0, 0, 0)));
+        var textBrush = Frozen(new SolidColorBrush(text));
+        var splitPen = new Pen(Frozen(new SolidColorBrush(Color.FromArgb((byte)(lightPanel ? 90 : 200), 0, 0, 0))), Math.Max(1, 1.6 * s));
+        var hingeBrush = Frozen(new SolidColorBrush(hinge));
+        double hw = mainSize * .06, hh = mainSize * .16;
+        foreach (char c in fTime)
+        {
+            double w = c == ':' ? fColonW : fTileW;
+            var tile = new Rect(x, top, w, fTileH);
+            dc.DrawRoundedRectangle(tileFill, null, tile, tileR, tileR);
+            dc.PushClip(new RectangleGeometry(tile, tileR, tileR));
+            dc.DrawRectangle(lowerShade, null, new Rect(x, mid, w, fTileH / 2));
+            dc.Pop();
+            if (c == ':')
+            {
+                double dot = mainSize * .1;
+                foreach (double dy in new[] { -fTileH * .16, fTileH * .16 })
+                    dc.DrawRoundedRectangle(textBrush, null, new Rect(x + (w - dot) / 2, mid + dy - dot / 2, dot, dot), dot * .2, dot * .2);
+            }
+            else
+            {
+                var glyph = Text(c.ToString(), fDigitSize, textBrush, flipFace);
+                dc.DrawText(glyph, new Point(x + (w - glyph.WidthIncludingTrailingWhitespace) / 2, top + (fTileH - fDigitH) / 2 - fDigitTop));
+                dc.DrawLine(splitPen, new Point(x, mid), new Point(x + w, mid));
+                foreach (double hx2 in new[] { x - hw / 2, x + w - hw / 2 })
+                    dc.DrawRoundedRectangle(hingeBrush, null, new Rect(hx2, mid - hh / 2, hw, hh), hw * .3, hw * .3);
+            }
+            x += w + fGap;
+        }
+        if (p.SecondsIndicator != "None") DrawIndicator(dc, accent, fTrayX + fPad, fTrayW - fPad * 2, fIndicatorY);
     }
 
     // ---- Spaced layout: a wide, letter-spaced weekday, the full date, and "—  3:56:23 PM  —" beneath ----
@@ -887,6 +999,7 @@ public sealed class ClockFace : FrameworkElement
             if (arcLayout) RenderArc(dc, text, accent, inkBrush, dim);
             if (splitLayout) RenderSplit(dc, text, accent, inkBrush, dim);
             if (spacedLayout) RenderSpaced(dc, text, accent, inkBrush, dim);
+            if (flipLayout) RenderFlip(dc, text, accent);
             dc.Pop();
             if (calendarOn) RenderCalendar(dc, text, accent);
         }

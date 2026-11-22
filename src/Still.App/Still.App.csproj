@@ -4,7 +4,7 @@
     <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>disable</ImplicitUsings><ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>still.ico</ApplicationIcon><AssemblyName>Still</AssemblyName>
-    <Version>2.6.1</Version><Description>A futuristic, customizable clock for your desktop</Description>
+    <Version>2.7.0</Version><Description>A futuristic, customizable clock for your desktop</Description>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../Still.Core/Still.Core.csproj"/><Resource Include="still.ico"/></ItemGroup>
   <!-- Bundled SIL OFL fonts (Quicksand, Michroma); their licence texts ship beside the app in licences/fonts. -->

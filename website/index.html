@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Still · A futuristic desktop clock for Windows 11 and Linux</title>
+  <meta name="description" content="Still is a futuristic, deeply customizable desktop clock widget for Windows 11 and Linux. Sixteen presets, no telemetry, no admin rights, free and open source.">
+  <meta name="theme-color" content="#070b14">
+  <meta property="og:title" content="Still · A futuristic desktop clock">
+  <meta property="og:description" content="A deeply customizable desktop clock for Windows 11 and Linux. Sixteen presets. No telemetry. Free and MIT licensed.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://danny19862025.github.io/still-clock/images/preset-neon.png">
+  <meta property="og:url" content="https://danny19862025.github.io/still-clock/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="is-loading">
+  <!-- Intro reveal -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="intro-panel intro-top"></div>
+    <div class="intro-panel intro-bottom"></div>
+    <div class="intro-core">
+      <div class="intro-brand"><span class="brand-mark"></span><span class="intro-word">STILL</span></div>
+      <div class="intro-clock mono" id="introClock">00:00:00</div>
+      <div class="intro-line"><span id="introBar"></span></div>
+      <div class="intro-status mono" id="introStatus">SYNCING CHRONO CORE</div>
+    </div>
+  </div>
+
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+  <canvas class="particles" id="particles" aria-hidden="true"></canvas>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="Still home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">STILL</span>
+      <span class="brand-sub">// CHRONO INTERFACE</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#presets">Presets</a>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/danny19862025/still-clock" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <div class="nav-right">
+      <span class="nav-time mono" id="navTime">--:--:--</span>
+      <span class="nav-dot" aria-hidden="true">·</span>
+      <span class="nav-tz mono" id="navTz">UTC</span>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow mono"><span class="pulse"></span> <span id="versionTag">Still 2.7.0</span> · Free &amp; open source</p>
+        <h1>Time, <em>beautifully</em> still.</h1>
+        <p class="lead">A futuristic, deeply customizable desktop clock for <strong>Windows&nbsp;11</strong> and <strong>Linux</strong>. A real borderless widget with sixteen presets, eight layouts and a live settings studio. No accounts, no telemetry, no admin rights.</p>
+
+        <div class="cta">
+          <a class="btn btn-primary" id="primaryDownload" href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-Setup-win-x64.exe">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 19h16" /></svg>
+            <span id="primaryLabel">Download for Windows</span>
+          </a>
+          <a class="btn btn-ghost" id="secondaryDownload" href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-linux-x64.tar.gz">
+            <span id="secondaryLabel">Download for Linux</span>
+          </a>
+        </div>
+        <p class="cta-meta mono">
+          <a href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-win-x64.zip">Portable ZIP</a> ·
+          <a href="https://github.com/danny19862025/still-clock/releases">All releases</a> ·
+          <a href="https://github.com/danny19862025/still-clock">Source</a>
+        </p>
+      </div>
+
+      <div class="preview" aria-label="Live preview of Still clock styles">
+        <div class="preview-head mono">
+          <span class="accent">LIVE PREVIEW</span>
+          <div class="seg" role="tablist" aria-label="Preview style">
+            <button role="tab" data-face="neon" aria-selected="true">Neon</button>
+            <button role="tab" data-face="flip" aria-selected="false">Flip</button>
+            <button role="tab" data-face="spaced" aria-selected="false">Spaced</button>
+            <button role="tab" data-face="terminal" aria-selected="false">Terminal</button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <!-- Neon -->
+          <div class="face face-neon active" data-face="neon">
+            <div class="neon-row">
+              <span class="neon-time"><span data-h>00</span><span class="neon-colon">:</span><span data-m>00</span></span>
+              <span class="neon-sec" data-s>00</span>
+            </div>
+            <div class="neon-bar"><span class="neon-fill" data-progress></span></div>
+            <div class="neon-date"><span data-wd-short>MON</span><span class="sep">·</span><span data-iso>2026-01-01</span></div>
+          </div>
+
+          <!-- Flip -->
+          <div class="face face-flip" data-face="flip">
+            <div class="flip-card">
+              <div class="flip-head"><span class="flip-wd" data-wd-long>MONDAY</span><span class="flip-date" data-dm>01 JAN</span></div>
+              <div class="flip-tray">
+                <span class="tile" data-d="0">0</span><span class="tile" data-d="1">0</span>
+                <span class="tile tile-colon"><i></i><i></i></span>
+                <span class="tile" data-d="2">0</span><span class="tile" data-d="3">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spaced -->
+          <div class="face face-spaced" data-face="spaced">
+            <div class="spaced-wd" data-wd-long>MONDAY</div>
+            <div class="spaced-date" data-long-date>JANUARY 01, 2026</div>
+            <div class="spaced-time"><span class="rule"></span><span data-hm12>12:00 AM</span><span class="rule"></span></div>
+          </div>
+
+          <!-- Terminal -->
+          <div class="face face-terminal" data-face="terminal">
+            <div class="term">
+              <div class="term-line dim">&gt; now</div>
+              <div class="term-time"><span data-hms>00:00:00</span><span class="cursor">_</span></div>
+              <div class="term-line" data-term-date>monday 01 january 2026</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-foot mono">
+          <span id="faceName">NEON</span> / 1.00× / <span id="faceSurface">TRANSPARENT</span> / <span id="faceFx">FX GLOW</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- STRIP -->
+    <section class="strip mono" aria-label="Highlights">
+      <div class="strip-track" id="stripTrack">
+        <span>16 PRESETS</span><span>8 LAYOUTS</span><span>WINDOWS 11 + LINUX</span><span>NO TELEMETRY</span><span>NO ADMIN / ROOT</span><span>MIT LICENCE</span><span>.NET 10 LTS</span><span>THEME SHARING</span>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats" aria-label="Still by the numbers">
+      <div class="stat"><span class="stat-n mono" data-count="16">0</span><span class="stat-l">Presets</span></div>
+      <div class="stat"><span class="stat-n mono" data-count="8">0</span><span class="stat-l">Layouts</span></div>
+      <div class="stat"><span class="stat-n mono" data-count="8">0</span><span class="stat-l">Palettes</span></div>
+      <div class="stat"><span class="stat-n mono" data-count="0">0</span><span class="stat-l">Trackers</span></div>
+    </section>
+
+    <!-- PRESETS -->
+    <section class="section" id="presets">
+      <div class="section-head">
+        <p class="kicker mono">// 01 PRESETS</p>
+        <h2>Sixteen starting points.</h2>
+        <p class="sub">Every preset is only a starting point. Change any colour, font, layout or effect afterwards. These are actual renders exported from the app.</p>
+      </div>
+      <div class="gallery" id="gallery"></div>
+      <p class="fine">The backdrop behind each clock is illustrative.</p>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section" id="features">
+      <div class="section-head">
+        <p class="kicker mono">// 02 FEATURES</p>
+        <h2>A settings studio, not a config file.</h2>
+        <p class="sub">Five pages, a live preview and instant saving. Basic customization never needs markup.</p>
+      </div>
+
+      <div class="features">
+        <article class="feature">
+          <span class="num mono">01</span>
+          <h3>Theme</h3>
+          <p>A live gallery of all sixteen presets, one-click palettes (Cyber, Synth, Matrix, Solar, Plasma, Ice, Ember, Classic) and Dark, Light or Match system settings.</p>
+        </article>
+        <article class="feature">
+          <span class="num mono">02</span>
+          <h3>Style</h3>
+          <p>Classic, Poster, Script, Overlay, Arc, Split, Spaced or Flip. Fonts, weight, spacing, hex colours, 12/24-hour, seconds, date formats, scale and opacity.</p>
+        </article>
+        <article class="feature">
+          <span class="num mono">03</span>
+          <h3>Effects</h3>
+          <p>Neon glow, gradient text, seconds indicators, blinking separators, frames, captions, time-zone tags, glass surfaces, corner radius and CRT scanlines.</p>
+        </article>
+        <article class="feature">
+          <span class="num mono">04</span>
+          <h3>Calendar</h3>
+          <p>An optional Month, Week or Strip calendar below or beside the clock, with week numbers, dimmed weekends and today marked in your accent colour.</p>
+        </article>
+        <article class="feature">
+          <span class="num mono">05</span>
+          <h3>Advanced</h3>
+          <p>Lock, click-through, always-on-top, launch at sign-in, per-display placement and a safe custom text template with placeholders like <code>{time}</code>.</p>
+        </article>
+        <article class="feature">
+          <span class="num mono">↔</span>
+          <h3>Theme sharing</h3>
+          <p><em>Copy theme</em> puts a single <code>still-theme:</code> line on your clipboard. Paste it on another PC, on Windows or Linux, to carry the look across.</p>
+        </article>
+      </div>
+
+      <figure class="shot">
+        <img src="images/settings.png" alt="The Still settings window with live preview and preset gallery" loading="lazy" width="1660" height="1270">
+        <figcaption class="mono">STILL SETTINGS · 01 THEME</figcaption>
+      </figure>
+    </section>
+
+    <!-- PRIVACY -->
+    <section class="section" id="privacy">
+      <div class="section-head">
+        <p class="kicker mono">// 03 PRINCIPLES</p>
+        <h2>Quiet by design.</h2>
+      </div>
+      <div class="principles">
+        <div class="principle"><h3>Native, not a web view</h3><p>C# on .NET 10 LTS. WPF on Windows, Avalonia on Linux, one shared core. No browser engine running on your desktop.</p></div>
+        <div class="principle"><h3>Nothing phones home</h3><p>No server, account, telemetry or background network use. Still only contacts GitHub when you press <strong>Check for updates</strong>.</p></div>
+        <div class="principle"><h3>No elevated privileges</h3><p>Installs for your user only. No administrator or root rights, ever. Preferences stay in a single local JSON file.</p></div>
+        <div class="principle"><h3>Accurate and light</h3><p>Reads the system clock on every refresh instead of counting. Ticks per minute unless seconds are visible, and not at all when hidden.</p></div>
+        <div class="principle"><h3>Verified updates</h3><p>On Windows, updates are checked against the release's published SHA-256 checksums before Setup runs.</p></div>
+        <div class="principle"><h3>Open source</h3><p>Every line is on GitHub under the MIT licence. Read it, build it, fork it.</p></div>
+      </div>
+    </section>
+
+    <!-- INSTALL -->
+    <section class="section" id="install">
+      <div class="section-head">
+        <p class="kicker mono">// 04 INSTALL</p>
+        <h2>Running in under a minute.</h2>
+      </div>
+
+      <div class="install">
+        <div class="seg seg-lg" role="tablist" aria-label="Operating system">
+          <button role="tab" data-os="windows" aria-selected="true">Windows 11</button>
+          <button role="tab" data-os="linux" aria-selected="false">Linux</button>
+        </div>
+
+        <div class="os-panel active" data-os="windows">
+          <ol class="steps">
+            <li><span class="step-n mono">01</span><div><h3>Download Setup</h3><p>Get <a href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-Setup-win-x64.exe"><code>Still-Setup-win-x64.exe</code></a> from the latest release. The installer includes .NET.</p></div></li>
+            <li><span class="step-n mono">02</span><div><h3>Run it</h3><p>Still installs for your Windows user with a Start menu shortcut. No administrator rights needed. If an older Still is running, exit it from its tray icon first.</p></div></li>
+            <li><span class="step-n mono">03</span><div><h3>Pick a preset</h3><p>Launch Still and choose a look such as Neon, HUD, Holo or Flip. Drag the clock to move it; double-click it to open Settings.</p></div></li>
+          </ol>
+          <p class="fine">Targets Intel/AMD x64 Windows 11. Prefer no installer? Extract the <a href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-win-x64.zip">portable ZIP</a> to a permanent folder and run <code>Still.exe</code>. The release is unsigned; checksums are in <code>SHA256SUMS.txt</code>.</p>
+        </div>
+
+        <div class="os-panel" data-os="linux">
+          <ol class="steps">
+            <li><span class="step-n mono">01</span><div><h3>Download</h3><p>Get <a href="https://github.com/danny19862025/still-clock/releases/latest/download/Still-linux-x64.tar.gz"><code>Still-linux-x64.tar.gz</code></a>, a single self-contained executable with .NET included.</p></div></li>
+            <li><span class="step-n mono">02</span><div><h3>Install for your user</h3>
+              <div class="code">
+                <button class="copy mono" data-copy="tar -xzf Still-linux-x64.tar.gz &amp;&amp; cd Still-linux-x64 &amp;&amp; ./install.sh">COPY</button>
+<pre><code><span class="c">$</span> tar -xzf Still-linux-x64.tar.gz
+<span class="c">$</span> cd Still-linux-x64
+<span class="c">$</span> ./install.sh</code></pre>
+              </div>
+              <p>No root. Installs to <code>~/.local/opt/still</code>, adds a <code>still</code> command and a menu entry, and starts at login (use <code>--no-autostart</code> to skip).</p></div></li>
+            <li><span class="step-n mono">03</span><div><h3>Enjoy</h3><p>Tested on Arch Linux with KDE Plasma 6 (Wayland). Works on any compositing X11 or Wayland desktop. GNOME needs the AppIndicator extension for the tray icon.</p></div></li>
+          </ol>
+          <p class="fine">To remove Still, run <code>~/.local/opt/still/uninstall.sh</code> (add <code>--purge</code> to delete your settings too).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPORT -->
+    <section class="section support">
+      <div class="support-card">
+        <div>
+          <p class="kicker mono">// SUPPORT</p>
+          <h2>Made by Danny Rudd.</h2>
+          <p class="sub">If Still brightens your desktop, you can buy me a coffee. Bug reports and ideas are welcome on GitHub.</p>
+        </div>
+        <div class="support-actions">
+          <a class="btn btn-coffee" href="https://buymeacoffee.com/danny1986" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+          <a class="btn btn-ghost" href="https://github.com/danny19862025/still-clock/issues" target="_blank" rel="noopener">Report an issue</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mono">
+    <span>◆ STILL · MIT LICENCE · © Danny Rudd</span>
+    <span>Inspired by <a href="https://github.com/MarcinOrlowski/html-clock-plasmoid" target="_blank" rel="noopener">HTML Clock for Plasma</a></span>
+  </footer>
+
+  <dialog class="lightbox" id="lightbox">
+    <button class="lb-close" aria-label="Close" id="lbClose">✕</button>
+    <img id="lbImg" alt="">
+    <p class="lb-cap" id="lbCap"></p>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

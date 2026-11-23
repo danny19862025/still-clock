@@ -1,5 +1,12 @@
 # Still
 
+<p>
+  <a href="https://danny19862025.github.io/still-clock/">
+    <img src="website/favicon.svg" alt="Still website" width="24" height="24" align="absmiddle">
+    <strong>Website — danny19862025.github.io/still-clock</strong>
+  </a>
+</p>
+
 A futuristic, deeply customizable desktop clock for Windows 11 and Linux.
 
 Still is an actual borderless desktop widget with a separate settings window
